@@ -25,3 +25,10 @@ HTTP без выполнения JS и POST; URL должен быть HTTP(S), 
   form, one consent control, policy links, zero review findings.
 - Real GET smoke: https://arvectum.com/ via bounded read-only scan.
 - No browser cookies/HAR or automatic legal findings; retained as 002.
+
+### Acceptance verified
+- Build: uv build (sdist + wheel) PASS.
+- Lint and tests: Ruff PASS, 17/17 Feature 001 tests PASS.
+- GitHub Actions: Compliance CI run 41989962869 PASS.
+- GitVerse mirror: run 41989962924 PASS; main SHA aligned.
+- Mac mini LaunchAgent: active and clean fast-forward.

@@ -8,3 +8,5 @@
 5. Негативные security tests и QA на собственных тестовых доменах.
 
 Gate: не включать публичный SaaS до проверенного сетевого sandbox.
+
+B002 evidence DTO и сравнение фаз реализованы как офлайн-контракт в src/arvectum_compliance/core/browser_evidence.py; браузерный сбор и сетевой sandbox **не** реализованы.

@@ -33,3 +33,6 @@
 - LaunchAgent установлен, проверен fast-forward и защита грязного дерева.
 - Далее: специфицировать rule schema, finding/evidence schema, API
   и зависимости от Data Platform перед началом разработки движка.
+
+## Текущий следующий шаг
+Feature 002: B002 DTO готов, B001/B003–B005 ожидают изолированного browser worker; публичный SaaS — NO-GO до egress/DNS gates.

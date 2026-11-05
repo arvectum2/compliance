@@ -46,3 +46,9 @@
 требует повышения rule_version и нового теста/фактологического источника.
 В CI полностью сетенезависимый suite. Интеграцию с Data Platform
 дополнительно проверяем в Mac mini workspace, не импортируем её внутренние файлы.
+
+## Браузерные доказательства (Feature 002, B002)
+Модель в core/browser_evidence.py чистая и офлайн: принимает URL-запросы
+и только домены cookies, сохраняет агрегированные host/count и коды review.
+Запросы с embedded credentials отклоняются; path/query/fragment удаляются.
+Это **не** браузерный worker, не cookie classification и не legal verdict.
