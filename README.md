@@ -67,3 +67,18 @@ COMPLIANCE_DOCKER_E2E=1 .venv/bin/pytest -q tests/test_browser_docker.py
 Официальный образ закреплён по мультиархитектурному digest;
 `--network none` и остальные ограничения см. [security](docs/BROWSER_SECURITY.md).
 Для live браузерных проверок публичных сайтов ещё требуется B001c.
+
+## Feature 003 — verified offline gateway prototype
+
+Готовы DNS TXT proof (включая SQLite), HMAC-права на точный домен и задание,
+бюджеты запросов/байтов, закрепление публичного IP и отдельный Chromium
+без сетевого доступа с двунаправленным IPC через stdin/stdout.
+
+Проверка только на синтетических HTML-страницах:
+```bash
+COMPLIANCE_DOCKER_E2E=1 .venv/bin/pytest -q   tests/test_browser_docker.py tests/test_bridge_docker.py
+```
+
+Продуктовый live-browser API НЕ запущен. **Обязательный блокер: EG-003**
+(промышленная изоляция egress-шлюза и отрицательные тесты firewall).
+Подробнее: [security](docs/FEATURE003_SECURITY.md), [Spec Kit](specs/003-verified-egress-gateway/spec.md).

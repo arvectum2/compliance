@@ -111,3 +111,11 @@ def test_tcp_connection_uses_pinned_ip_not_original_hostname(monkeypatch):
     connected = conn._create_connection(("example.com", 443), timeout=8.0)
     assert connected is not None
     assert seen == [("8.8.8.8", 443)]
+
+
+@pytest.mark.parametrize("ip", [
+    "::ffff:8.8.8.8", "2002:0808:0808::1",
+])
+def test_reject_embedded_ipv4_in_ipv6_even_if_public(ip):
+    with pytest.raises(UnsafeOutboundTarget, match="IPv6"):
+        resolve_public_target("https://example.com", resolver=dns(ip))

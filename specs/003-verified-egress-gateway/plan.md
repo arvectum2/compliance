@@ -13,8 +13,8 @@
 
 ## Implementation slices
 1. Domain proof service and tenant authorization snapshot. Tests first.
-2. Gateway RPC schema and mutual isolation: local Unix socket mounted
-   read-only scoped, reject all methods except GET/HEAD and authorized hosts.
+2. Gateway RPC schema and mutual isolation: **stdio broker** (ADR-0002),
+   reject all methods except GET and unauthorized hosts.
 3. Gateway container with production egress firewall, DNS pinning and
    per-request limits. Validate both address families and redirects.
 4. Live Chromium adapter reading gateway responses through route.fulfill;
@@ -31,3 +31,10 @@ as a security boundary. No third-party host access without a separate policy.
 Keep existing core CI fast. Feature-specific integration tests run in
 manual/required security workflows with pinned images. Launch only in
 internal environment after the kernel firewall and tenant proof tests pass.
+
+## Current evidence, 2026-11-05
+EG-001a-c, EG-002a, EG-004a, EG-005a, EG-006a-b and EG-008a
+implemented in reusable Python core/service and isolated Node worker.
+Offline Docker E2E reaches the signed broker; the broker supplies only
+synthetic fixture HTML for a reserved .invalid hostname. See acceptance.md
+and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.

@@ -42,5 +42,6 @@ B001c (промышленный egress gateway + подтверждение пр
 
 ## Следующий Spec Kit срез: Feature 003
 [Verified egress gateway](../specs/003-verified-egress-gateway/spec.md):
-владение доменом, изолированный сетевой шлюз, firewall, DNS/redirect/
-subresource QA, внутренний live Chromium smoke. Пока НЕ РЕАЛИЗОВАН.
+завершены challenge/SQLite/grant, IP-pinned transport и no-network
+Chromium ↔ stdio gateway на synthetic fixtures. Производственный firewall,
+trusted tenant/DNS и внутренний live Chromium smoke не реализованы. NO-GO.

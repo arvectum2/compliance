@@ -49,6 +49,11 @@ def resolve_public_target(url: str, *, resolver=None) -> PublicTarget:
             ip = ipaddress.ip_address(answer[4][0])
         except ValueError as exc:
             raise UnsafeOutboundTarget("DNS returned invalid IP") from exc
+        if isinstance(ip, ipaddress.IPv6Address) and (
+            ip.ipv4_mapped is not None or ip.sixtofour is not None
+            or ip.teredo is not None
+        ):
+            raise UnsafeOutboundTarget("Tunneled or IPv4-mapped IPv6 refused")
         if not ip.is_global:
             raise UnsafeOutboundTarget("Non-public IP address refused")
         ips.append(str(ip))

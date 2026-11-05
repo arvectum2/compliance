@@ -26,4 +26,4 @@ jobs:
       - name: Docker security and browser E2E
         env:
           COMPLIANCE_DOCKER_E2E: '1'
-        run: pytest -q tests/test_browser_docker.py
+        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py
