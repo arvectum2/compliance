@@ -33,6 +33,7 @@ class PhaseEvidence:
     phase: Phase
     requests: tuple[HostCount, ...]
     cookies: tuple[HostCount, ...]
+    blocked_requests: tuple[HostCount, ...] = ()
 
     @classmethod
     def from_observations(
@@ -40,10 +41,11 @@ class PhaseEvidence:
         phase: Phase,
         request_urls: list[str],
         cookie_domains: list[str],
+        blocked_urls: list[str] | None = None,
     ) -> PhaseEvidence:
         if phase not in {"baseline", "reject", "accept"}:
             raise ValueError("Unsupported phase")
-        if len(request_urls) > 2000 or len(cookie_domains) > 2000:
+        if len(request_urls) > 2000 or len(cookie_domains) > 2000 or len(blocked_urls or []) > 2000:
             raise ValueError("Observation exceeds resource cap")
         request_hosts = Counter(_safe_host(u) for u in request_urls)
         cookie_hosts = Counter()
@@ -57,6 +59,9 @@ class PhaseEvidence:
             phase=phase,
             requests=tuple(HostCount(k, v) for k, v in sorted(request_hosts.items())),
             cookies=tuple(HostCount(k, v) for k, v in sorted(cookie_hosts.items())),
+            blocked_requests=tuple(HostCount(k, v) for k, v in sorted(
+                Counter(_safe_host(u) for u in (blocked_urls or [])).items()
+            )),
         )
 
 
@@ -64,6 +69,7 @@ class PhaseEvidence:
 class BrowserReview:
     code: str
     explanation: str
+    rule_version: str = "1.0.0"
     status: Literal["review"] = "review"
 
 
@@ -75,8 +81,13 @@ class ConsentObservation:
     accepted: PhaseEvidence | None
     reviews: tuple[BrowserReview, ...] = field(default_factory=tuple)
     schema_version: str = "1.0"
+    scenario_version: str | None = None
+    browser_version: str | None = None
+    generated_at: str | None = None
+    source_sha256: str | None = None
     limitations: tuple[str, ...] = (
         "Cookie names, values, paths and network URL details are not recorded.",
+        "Request counts can include attempts blocked before network transmission.",
         "Observed cookies and requests are not proof of unlawful processing.",
         "An unrecognized consent control means an inconclusive scenario.",
     )
@@ -90,6 +101,11 @@ def compare_consent_phases(
     baseline: PhaseEvidence,
     rejected: PhaseEvidence | None = None,
     accepted: PhaseEvidence | None = None,
+    *,
+    scenario_version: str | None = None,
+    browser_version: str | None = None,
+    generated_at: str | None = None,
+    source_sha256: str | None = None,
 ) -> ConsentObservation:
     source_host = _safe_host(source_url)
     if baseline.phase != "baseline" or (rejected and rejected.phase != "reject"):
@@ -110,7 +126,7 @@ def compare_consent_phases(
     elif any(item.host != source_host for item in rejected.requests):
         reviews.append(BrowserReview(
             "CROSS-HOST-AFTER-REJECT",
-            "Cross-host requests were observed after rejection; inspect purpose and basis.",
+            "Cross-host request attempts observed after rejection; may have been blocked.",
         ))
     return ConsentObservation(
         source_host=source_host,
@@ -118,4 +134,8 @@ def compare_consent_phases(
         rejected=rejected,
         accepted=accepted,
         reviews=tuple(reviews),
+        scenario_version=scenario_version,
+        browser_version=browser_version,
+        generated_at=generated_at,
+        source_sha256=source_sha256,
     )

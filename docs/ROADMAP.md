@@ -35,4 +35,7 @@
   и зависимости от Data Platform перед началом разработки движка.
 
 ## Текущий следующий шаг
-Feature 002: B002 DTO готов, B001/B003–B005 ожидают изолированного browser worker; публичный SaaS — NO-GO до egress/DNS gates.
+Feature 002: B001a (Docker без сети), B001b (IP pinning), B002 (DTO),
+B003 (fixture reject/accept), B004 (Docker safety/E2E) выполнены.
+B001c (промышленный egress gateway + подтверждение прав/квоты) и B005
+(реальный браузерный пилот) ожидают реализации. Публичный SaaS — NO-GO.

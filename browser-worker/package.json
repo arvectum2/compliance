@@ -1,0 +1,18 @@
+{
+  "name": "@arvectum/compliance-browser-worker",
+  "private": true,
+  "version": "0.1.0",
+  "description": "No-network browser fixture analyzer; no live target access",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "fixture": "node worker.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.64.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -25,5 +25,15 @@ jobs:
         run: bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks
       - run: ruff check src tests
       - run: pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Browser worker policy tests (offline)
+        run: node --test browser-worker/test/policy.test.mjs
+      - name: Spec Kit browser feature gate
+        env:
+          SPECIFY_FEATURE_DIRECTORY: specs/002-browser-consent-observation
+          SPECIFY_FEATURE_NO_PERSIST: '1'
+        run: bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks
       - run: arvectum-compliance scan-html tests/fixtures/good.html --url https://example.com/contact > /tmp/compliance.json
       - run: python -c 'import json; d=json.load(open("/tmp/compliance.json")); assert d["schema_version"]=="1.0" and not d["findings"]'

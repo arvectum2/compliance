@@ -1,0 +1,29 @@
+name: Compliance Browser Docker E2E
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install offline core and browser client
+        run: |
+          python -m pip install -e '.[dev]'
+          npm ci --prefix browser-worker --ignore-scripts --no-audit --no-fund
+      - name: Pull SHA-pinned Playwright image
+        run: docker pull mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      - name: Docker security and browser E2E
+        env:
+          COMPLIANCE_DOCKER_E2E: '1'
+        run: pytest -q tests/test_browser_docker.py

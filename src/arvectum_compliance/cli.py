@@ -33,6 +33,9 @@ def main(argv: list[str] | None = None) -> int:
             from .adapters.data_platform import scan_url
 
             report = scan_url(args.url, authorized=True)
+    except RuntimeError as exc:
+        print(f"ERROR: scan failed ({type(exc).__name__}); verify network/target", file=sys.stderr)
+        return 2
     except (ValueError, PermissionError, OSError, ImportError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

@@ -10,3 +10,5 @@ build/
 .env.*
 !.env.example
 reports/
+
+node_modules/

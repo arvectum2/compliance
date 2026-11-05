@@ -10,7 +10,10 @@
   границ безопасности и двухсторонний проектный реестр — реализованы.
 - AC-01: работающий **офлайн статический** анализ HTML и ограниченный
   одноадресный HTTP GET — реализованы, браузерный анализ cookies ещё не готов.
-- Feature 002: безопасный офлайн-контракт для агрегированных браузерных свидетельств реализован; worker ещё не запущен.
+- Feature 002: изолированный Docker Chromium worker проверен на тестовых
+  страницах (baseline/reject/accept). Выходы очищаются от значений cookies
+  и URL-параметров. Реальное браузерное сканирование сайтов не разрешено
+  до production egress/firewall и подтверждения владения доменом.
 - AC-02+: юридические пакеты правил, SaaS, мониторинг и PR-исправления — впереди.
 
 ## Быстрый старт
@@ -51,3 +54,16 @@ print(report.to_dict())
 GitHub — https://github.com/arvectum2/compliance (канонический)
 GitVerse — https://gitverse.ru/arvectum/compliance (зеркало)
 Mac mini — `/Volumes/ArvectumSSD/Arvectum/repos/compliance`
+
+
+## Проверка браузерного worker (только тестовые страницы)
+```sh
+npm ci --prefix browser-worker --ignore-scripts --no-audit
+docker pull mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+scripts/run-browser-fixture.sh consent.html
+COMPLIANCE_DOCKER_E2E=1 .venv/bin/pytest -q tests/test_browser_docker.py
+```
+
+Официальный образ закреплён по мультиархитектурному digest;
+`--network none` и остальные ограничения см. [security](docs/BROWSER_SECURITY.md).
+Для live браузерных проверок публичных сайтов ещё требуется B001c.
