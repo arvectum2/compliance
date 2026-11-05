@@ -43,9 +43,10 @@ Normative engineering source: specs/003-verified-egress-gateway/.
 
 - EG-001c: authenticated account identity, production DNS verification
   policy, rate limits and operational DB.
-- EG-003: dedicated gateway container/VM with kernel-level egress deny to
-  private, loopback, link-local, metadata and tunneled IPv4/IPv6 addresses,
-  including a network attack test with application checks disabled.
+- EG-003b: a REAL HTTPS gateway service must run inside the tested
+  nftables container. EG-003a verified the independent Linux kernel policy
+  on loopback and private Docker-bridge TCP:443, but gateway integration,
+  metadata/IPv6 bypass tests and external DNS policy are not yet approved.
 - EG-004b/005b: real subresources, redirects, iframes and owned-domain
   browser flow behind that gateway. WebRTC/WebSockets restricted.
 - EG-006c: independent security review.

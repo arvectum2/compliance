@@ -22,3 +22,8 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
   no-policy control => both loopback and bridge IP reachable (exit 25/26);
   with nft => both unreachable. Worker uid 65532, CapEff and CapBnd = 0;
   nft flush prohibited. Production EG-003b remains unimplemented.
+
+## Independent GitHub security workflow
+- Kernel firewall E2E run 42090914009: SUCCESS on Linux x86-64.
+- No-firewall controls reach actual port 443 listeners; firewall denies them.
+- This does not assert that EG-003b gateway production runtime is complete.
