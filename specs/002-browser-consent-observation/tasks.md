@@ -4,7 +4,8 @@
   strict fixture allowlist, blocked subresource/POST, limits, security E2E.
 - [x] B001b Public-address DNS validation and pinned TCP request primitive.
 - [ ] B001c Production egress gateway firewall, authorization, rate limits,
-  all redirects/subresources and independent network QA. **BLOCKS live SaaS.**
+  all redirects/subresources and independent network QA (Feature 003).
+  **BLOCKS live SaaS.**
 - [x] B002 Versioned browser evidence contract with redacted host counts.
 - [x] B003 Isolated baseline / reject / accept flows on approved fixtures.
 - [x] B004 Security/unit tests, real Docker smoke and negative fixtures.

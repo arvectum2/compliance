@@ -39,3 +39,8 @@ Feature 002: B001a (Docker без сети), B001b (IP pinning), B002 (DTO),
 B003 (fixture reject/accept), B004 (Docker safety/E2E) выполнены.
 B001c (промышленный egress gateway + подтверждение прав/квоты) и B005
 (реальный браузерный пилот) ожидают реализации. Публичный SaaS — NO-GO.
+
+## Следующий Spec Kit срез: Feature 003
+[Verified egress gateway](../specs/003-verified-egress-gateway/spec.md):
+владение доменом, изолированный сетевой шлюз, firewall, DNS/redirect/
+subresource QA, внутренний live Chromium smoke. Пока НЕ РЕАЛИЗОВАН.

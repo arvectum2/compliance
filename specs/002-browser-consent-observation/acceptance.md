@@ -28,3 +28,12 @@ Date: 2026-11-05. Scope: B001a, B001b, B002, B003, B004.
 - Verified ownership, authorization and tenant isolation on live domains.
 - B005: internal opt-in live browser observation on an owned site.
 - No public SaaS launch until these gates pass.
+
+## External CI verification
+- GitHub Compliance CI: run 41995467620 SUCCESS.
+- GitHub GitVerse mirror: run 41995467553 SUCCESS.
+- Linux x86-64 Docker E2E: run 41995482651 SUCCESS after Bash
+  entrypoint portability fix. Three tests pass with the same pinned image.
+- Mac mini ARM64 Docker E2E: three tests pass with `--network none`.
+- Tested implementation commit: `1d41cc64d15e2f4420a1bbefa61306b2a5fec15c`.
+- Production gateway remains NO-GO; next implementation tracked at Feature 003.
