@@ -82,3 +82,11 @@ COMPLIANCE_DOCKER_E2E=1 .venv/bin/pytest -q   tests/test_browser_docker.py tests
 Продуктовый live-browser API НЕ запущен. **Обязательный блокер: EG-003**
 (промышленная изоляция egress-шлюза и отрицательные тесты firewall).
 Подробнее: [security](docs/FEATURE003_SECURITY.md), [Spec Kit](specs/003-verified-egress-gateway/spec.md).
+
+Для независимой проверки сетевого ядра в Docker (Feature 003/EG-003a):
+```bash
+docker build -f infra/egress/Dockerfile \
+  -t arvectum/compliance-egress-probe:eg003-lite infra/egress
+COMPLIANCE_FIREWALL_E2E=1 .venv/bin/pytest -q tests/test_egress_kernel_docker.py
+```
+Это тестовый контейнер с nftables, **не** запущенный сетевой шлюз для клиентов.

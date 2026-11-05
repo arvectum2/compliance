@@ -45,3 +45,9 @@ B001c (промышленный egress gateway + подтверждение пр
 завершены challenge/SQLite/grant, IP-pinned transport и no-network
 Chromium ↔ stdio gateway на synthetic fixtures. Производственный firewall,
 trusted tenant/DNS и внутренний live Chromium smoke не реализованы. NO-GO.
+
+## Feature 003 — firewall status
+EG-003a: независимый nftables deny внутри временного контейнера,
+с доказательством на TCP:443 при включённой/отключённой политике — готов.
+EG-003b: фактический HTTPS gateway service в этом namespace ещё не
+размещён; production browser LIVE и SaaS остаются NO-GO.

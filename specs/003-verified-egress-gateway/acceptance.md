@@ -16,3 +16,9 @@ Date: 2026-11-05. **No public/live scanner is approved.**
 
 Remaining gates: EG-001d, EG-002b, EG-003, EG-004b,
 EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
+
+- EG-003a kernel probe: nftables policy installed inside a disposable Docker
+  network namespace. Direct kernel-level socket tests on port 443:
+  no-policy control => both loopback and bridge IP reachable (exit 25/26);
+  with nft => both unreachable. Worker uid 65532, CapEff and CapBnd = 0;
+  nft flush prohibited. Production EG-003b remains unimplemented.

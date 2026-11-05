@@ -7,7 +7,10 @@
       denial-of-service limits and multi-node store. BLOCKS LIVE.
 - [x] EG-002a Strict stdio IPC bridge, deny-by-default request envelope and caps.
 - [ ] EG-002b Production broker job management, observability and retention.
-- [ ] EG-003 Separate gateway runtime with independent kernel egress firewall.
+- [x] EG-003a Temporary Linux gateway namespace with nftables output policy,
+      root-to-nonroot capability drop and negative/positive kernel probes.
+- [ ] EG-003b Deploy the actual gateway SERVICE in that namespace, bind
+      authenticated broker, independent DNS/IPv6/subresource attack tests.
       **Hard security gate, not yet satisfied.**
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
 - [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.

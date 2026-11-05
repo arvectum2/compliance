@@ -38,3 +38,12 @@ implemented in reusable Python core/service and isolated Node worker.
 Offline Docker E2E reaches the signed broker; the broker supplies only
 synthetic fixture HTML for a reserved .invalid hostname. See acceptance.md
 and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
+
+## EG-003a — independent kernel firewall prototype
+- infra/egress/nftables.nft + entrypoint.sh + Dockerfile.
+- Apply nft before dropping to unprivileged user; CAP_SETPCAP is needed
+  to clear Linux capability bounding set (observed on Docker Desktop).
+- tests/test_egress_kernel_docker.py covers both negative controls
+  (kernel permits local:443 without nft) and actual deny with nft.
+- A purpose-built gateway runtime and positive live-site integration
+  are NOT included. EG-003b remains a release blocker.

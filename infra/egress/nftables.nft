@@ -1,0 +1,37 @@
+# Applied inside the container's own Linux network namespace only.
+# If install fails, entrypoint exits BEFORE running Python.
+flush ruleset
+table inet compliance_egress {
+  set forbidden_v4 {
+    type ipv4_addr
+    flags interval
+    elements = {
+      0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8,
+      169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24,
+      192.0.2.0/24, 192.168.0.0/16, 198.18.0.0/15,
+      198.51.100.0/24, 203.0.113.0/24, 224.0.0.0/4,
+      240.0.0.0/4
+    }
+  }
+  set forbidden_v6 {
+    type ipv6_addr
+    flags interval
+    elements = {
+      ::/128, ::1/128, ::ffff:0:0/96, 64:ff9b::/96,
+      100::/64, 2001::/32, 2001:db8::/32, 2002::/16,
+      fc00::/7, fe80::/10, ff00::/8
+    }
+  }
+  chain output {
+    type filter hook output priority 0
+    policy drop
+    # Allow only explicitly pinned resolver traffic; not generic DNS exfil.
+    ip daddr 127.0.0.11 udp dport 53 accept
+    ip daddr 127.0.0.11 tcp dport 53 accept
+    ip daddr { 1.1.1.1, 9.9.9.9 } udp dport 53 accept
+    ip daddr { 1.1.1.1, 9.9.9.9 } tcp dport 53 accept
+    ip daddr @forbidden_v4 counter drop
+    ip6 daddr @forbidden_v6 counter drop
+    tcp dport 443 counter accept
+  }
+}
