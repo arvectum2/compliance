@@ -100,3 +100,18 @@ def test_timestamp_must_be_timezone_aware():
     data["generated_at"] = "2026-11-05T08:00:00"
     with pytest.raises(ValueError, match="timestamp"):
         parse_fixture_json(json.dumps(data))
+
+
+def test_owned_parser_is_explicit_and_cannot_impersonate_fixture():
+    from arvectum_compliance.adapters.browser_fixture import parse_owned_internal_json
+
+    data = sample()
+    data["fixture"] = "internal-owned"
+    data["source_host"] = "arvectum.com"
+    result = parse_owned_internal_json(json.dumps(data))
+    assert result.source_host == "arvectum.com"
+    with pytest.raises(ValueError):
+        parse_fixture_json(json.dumps(data))
+    data["source_host"] = "evil.example"
+    with pytest.raises(ValueError):
+        parse_owned_internal_json(json.dumps(data))

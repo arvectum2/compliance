@@ -7,7 +7,7 @@ if [[ "$#" -ne 1 ]]; then
   exit 2
 fi
 case "$1" in
-  consent.html|attack.html|inconclusive.html) ;;
+  consent.html|attack.html|inconclusive.html|internal-owned) ;;
   *) echo 'Only approved synthetic fixtures are supported' >&2; exit 2 ;;
 esac
 image='mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f'

@@ -51,3 +51,11 @@ EG-003a: независимый nftables deny внутри временного 
 с доказательством на TCP:443 при включённой/отключённой политике — готов.
 EG-003b: фактический HTTPS gateway service в этом namespace ещё не
 размещён; production browser LIVE и SaaS остаются NO-GO.
+
+## EG-003b (внутренний срез)
+Выполнен EG-003b1: HTTPS Python GatewaySession исполняется в отдельном
+`nftables` контейнере; Chromium без сети взаимодействует с ним по stdio.
+3 синтетических E2E + негативные проверки. Вручную выполнен первый
+`arvectum.com` browser smoke (только GET главной страницы, HTTP 200).
+EG-003b2 (настоящее DNS proof, auth/RBAC, IPv6/DNS security review,
+subresource/redirect isolation) остаётся блокером публичного SaaS.

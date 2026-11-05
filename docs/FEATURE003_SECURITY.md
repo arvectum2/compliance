@@ -43,10 +43,10 @@ Normative engineering source: specs/003-verified-egress-gateway/.
 
 - EG-001c: authenticated account identity, production DNS verification
   policy, rate limits and operational DB.
-- EG-003b: a REAL HTTPS gateway service must run inside the tested
-  nftables container. EG-003a verified the independent Linux kernel policy
-  on loopback and private Docker-bridge TCP:443, but gateway integration,
-  metadata/IPv6 bypass tests and external DNS policy are not yet approved.
+- EG-003b1 gateway is now actually running within nftables: the
+  internal root-only `arvectum.com` browser smoke returned HTTP 200.
+  **EG-003b2 remains blocked**: true domain TXT ownership, tenant identity,
+  independent IPv6/DNS/subresource bypass tests and external policy review.
 - EG-004b/005b: real subresources, redirects, iframes and owned-domain
   browser flow behind that gateway. WebRTC/WebSockets restricted.
 - EG-006c: independent security review.

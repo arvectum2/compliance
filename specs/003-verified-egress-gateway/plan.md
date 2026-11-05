@@ -47,3 +47,21 @@ and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
   (kernel permits local:443 without nft) and actual deny with nft.
 - A purpose-built gateway runtime and positive live-site integration
   are NOT included. EG-003b remains a release blocker.
+
+
+
+## EG-003b1 — protected Python gateway and internal owned-site browser pilot
+- Existing core/service/egress_worker.py runs **inside** the nftables image
+  built from infra/egress/Dockerfile.gateway.
+- GatewaySession HMAC checks, hostname restrictions, request and byte
+  quotas operate in that process, not on the Mac host.
+- adapters/isolated_bridge.py connects the protected gateway with
+  browser-worker/bridge_worker.mjs via process stdin/stdout only. Browser
+  remains in a separate Linux `--network none` container.
+- Docker E2E covers consent, hostile local/metadata addresses,
+  unsafe submit-like controls and denial of unrelated sites/methods.
+- Internal opt-in live smoke on arvectum.com performs **one main-document
+  GET only**. The script does not accept a user-supplied URL, and no
+  stored DNS TXT proof is claimed. Root HTML is not persisted.
+- Next: real account/DNS ownership and independent external egress review
+  before network subresources or any multi-tenant endpoint.

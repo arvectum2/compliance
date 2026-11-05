@@ -9,16 +9,25 @@
 - [ ] EG-002b Production broker job management, observability and retention.
 - [x] EG-003a Temporary Linux gateway namespace with nftables output policy,
       root-to-nonroot capability drop and negative/positive kernel probes.
-- [ ] EG-003b Deploy the actual gateway SERVICE in that namespace, bind
-      authenticated broker, independent DNS/IPv6/subresource attack tests.
+- [x] EG-003b1 Python HTTPS GatewaySession runs inside the isolated
+      nftables namespace; no published ports; stdio IPC to no-network browser.
+- [ ] EG-003b2 Real DNS-verified, authenticated tenant authorization and
+      independent IPv6/DNS/subresource threat tests before public use.
       **Hard security gate, not yet satisfied.**
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
 - [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.
 - [x] EG-005a No-network Chromium ↔ signed gateway ↔ synthetic HTML end-to-end.
-- [ ] EG-005b Real domain browser flow with verified DNS proof.
+- [x] EG-005b1 Internal hardcoded arvectum.com root-document-only
+      browser flow; no external DNS proof asserted.
+- [ ] EG-005b2 Real browser flow with authenticated DNS proof and safe
+      subresource routing.
 - [x] EG-006a Unit negative tests, DNS rebinding, replay and malformed IPC.
 - [x] EG-006b Offline Docker E2E for metadata, localhost and submit-like controls.
+- [x] EG-006d Dual-container E2E, separate fake and real owned-target
+      restrictions, bounded IPC message parsing and stalled-line tests.
 - [ ] EG-006c Kernel firewall bypass test, independent security review.
-- [ ] EG-007 Owned arvectum.com live Chromium pilot. BLOCKED by EG-003.
+- [x] EG-007a Explicit internal-owned browser pilot with GET root HTML only.
+- [ ] EG-007b DNS-verified owned-site pilot, audited production network
+      sandbox and multi-tenant safety gates. BLOCKS PUBLIC LAUNCH.
 - [x] EG-008a Threat model, release gates and local rollback document.
 - [ ] EG-008b Production runbook, incident response and release approval.

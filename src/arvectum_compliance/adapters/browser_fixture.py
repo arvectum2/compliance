@@ -64,7 +64,9 @@ def _parse_phase(name: str, data: object) -> PhaseEvidence | None:
     )
 
 
-def parse_fixture_json(document: str) -> ConsentObservation:
+def _parse_report(
+    document: str, *, expected_host: str, allowed_fixtures: frozenset[str],
+) -> ConsentObservation:
     if len(document.encode("utf-8")) > 60_000:
         raise ValueError("Browser output limit exceeded")
     raw = json.loads(document)
@@ -74,8 +76,8 @@ def parse_fixture_json(document: str) -> ConsentObservation:
         raw["schema_version"] != "1.0"
         or raw["browser"] != "chromium"
         or raw["network_mode"] != "none"
-        or raw["source_host"] != "compliance-fixture.invalid"
-        or raw["fixture"] not in _ALLOWED_FIXTURES
+        or raw["source_host"] != expected_host
+        or raw["fixture"] not in allowed_fixtures
     ):
         raise ValueError("Untrusted browser output")
     if (
@@ -100,9 +102,25 @@ def parse_fixture_json(document: str) -> ConsentObservation:
     if baseline is None:
         raise ValueError("Baseline required")
     return compare_consent_phases(
-        "https://compliance-fixture.invalid/", baseline, rejected, accepted,
+        f"https://{expected_host}/", baseline, rejected, accepted,
         scenario_version=raw["scenario_version"],
         browser_version=raw["browser_version"],
         generated_at=raw["generated_at"],
         source_sha256=raw["source_sha256"],
+    )
+
+
+
+def parse_fixture_json(document: str) -> ConsentObservation:
+    return _parse_report(
+        document, expected_host="compliance-fixture.invalid",
+        allowed_fixtures=frozenset(_ALLOWED_FIXTURES),
+    )
+
+
+def parse_owned_internal_json(document: str) -> ConsentObservation:
+    """Only for the hardcoded internal read-only arvectum.com smoke."""
+    return _parse_report(
+        document, expected_host="arvectum.com",
+        allowed_fixtures=frozenset(("internal-owned",)),
     )

@@ -2,6 +2,14 @@ name: Compliance Browser Docker E2E
 on:
   push:
     paths:
+      - 'infra/egress/Dockerfile.gateway'
+      - 'infra/egress/entrypoint.sh'
+      - 'infra/egress/nftables.nft'
+      - 'scripts/run-egress-stdio-gateway.sh'
+      - 'src/arvectum_compliance/service/**'
+      - 'src/arvectum_compliance/adapters/isolated_bridge.py'
+      - 'src/arvectum_compliance/adapters/browser_fixture.py'
+      - 'tests/test_isolated_gateway_docker.py'
       - 'browser-worker/**'
       - 'scripts/run-browser-*.sh'
       - 'tests/test_browser_docker.py'
@@ -11,6 +19,14 @@ on:
       - '.github/workflows/browser-docker-e2e.yml'
   pull_request:
     paths:
+      - 'infra/egress/Dockerfile.gateway'
+      - 'infra/egress/entrypoint.sh'
+      - 'infra/egress/nftables.nft'
+      - 'scripts/run-egress-stdio-gateway.sh'
+      - 'src/arvectum_compliance/service/**'
+      - 'src/arvectum_compliance/adapters/isolated_bridge.py'
+      - 'src/arvectum_compliance/adapters/browser_fixture.py'
+      - 'tests/test_isolated_gateway_docker.py'
       - 'browser-worker/**'
       - 'scripts/run-browser-*.sh'
       - 'tests/test_browser_docker.py'
@@ -41,7 +57,10 @@ jobs:
           npm ci --prefix browser-worker --ignore-scripts --no-audit --no-fund
       - name: Pull SHA-pinned Playwright image
         run: docker pull mcr.microsoft.com/playwright@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
-      - name: Docker security and browser E2E
+      - name: Build nftables-protected Python gateway
+        run: |
+          docker build -f infra/egress/Dockerfile.gateway -t arvectum/compliance-egress-runtime:eg003b .
+      - name: Docker security and two-container browser E2E
         env:
           COMPLIANCE_DOCKER_E2E: '1'
-        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py
+        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py tests/test_isolated_gateway_docker.py

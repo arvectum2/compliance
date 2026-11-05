@@ -1,5 +1,5 @@
 # Feature 003 — verified-domain egress gateway for live browser scans
-Spec Kit v1.2.4 | Status: partially implemented; offline verified, LIVE NO-GO | 2026-11-05
+Spec Kit v1.2.4 | Status: isolated gateway + owned-site internal browser pilot verified; PUBLIC NO-GO | 2026-11-05
 
 ## User stories
 - Tenant operator adds a domain; a cryptographic challenge verifies

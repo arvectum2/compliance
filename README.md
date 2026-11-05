@@ -90,3 +90,15 @@ docker build -f infra/egress/Dockerfile \
 COMPLIANCE_FIREWALL_E2E=1 .venv/bin/pytest -q tests/test_egress_kernel_docker.py
 ```
 Это тестовый контейнер с nftables, **не** запущенный сетевой шлюз для клиентов.
+
+## EG-003b1 — isolated HTTPS Python gateway
+
+Python GatewaySession теперь выполняется внутри отдельного контейнера
+с `nftables` и отозванными Linux capabilities, а браузер работает
+в `--network none` и взаимодействует с ним только по IPC.
+Синтетические страницы проверяются в CI. Внутренний пилот `arvectum.com`
+выполнен только для GET главной HTML-страницы без сканирования внешних
+ресурсов. **Это не публичный сервис и не реальное DNS-подтверждение домена.**
+
+См. [технический отчёт](docs/EGRESS_GATEWAY.md) и
+[ADR-0003](docs/adr/0003-isolated-python-egress.md).

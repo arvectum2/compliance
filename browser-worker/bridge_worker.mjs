@@ -6,14 +6,15 @@ import readline from 'node:readline';
 import { chromium } from 'playwright';
 import { ALLOWED_FIXTURES, cookieHosts, hostCounts, safeHostname } from './policy.mjs';
 
-const ROOT = 'https://compliance-fixture.invalid/';
 const MAX_EVENTS = 120;
 const fixture = process.argv[2];
+const internalOwned = fixture === 'internal-owned';
+const ROOT = internalOwned ? 'https://arvectum.com/' : 'https://compliance-fixture.invalid/';
 if (process.platform !== 'linux' || Object.keys(networkInterfaces()).join() !== 'lo') {
   console.error('Isolated Linux loopback-only network namespace required');
   process.exit(3);
 }
-if (!ALLOWED_FIXTURES.has(fixture) || process.argv.length !== 3) process.exit(2);
+if ((!internalOwned && !ALLOWED_FIXTURES.has(fixture)) || process.argv.length !== 3) process.exit(2);
 setTimeout(() => process.exit(124), 25_000).unref();
 
 const outstanding = new Map();
@@ -134,8 +135,8 @@ async function observe(phase) {
 try {
   browser = await chromium.launch({ headless: true, timeout: 12_000 });
   const baseline = await observe('baseline');
-  const rejected = await observe('reject');
-  const accepted = await observe('accept');
+  const rejected = internalOwned ? null : await observe('reject');
+  const accepted = internalOwned ? null : await observe('accept');
   const report = {
     schema_version: '1.0',
     scenario_version: '0.1.0',
@@ -145,10 +146,10 @@ try {
     source_sha256: rootHash,
     network_mode: 'none',
     fixture,
-    source_host: 'compliance-fixture.invalid',
+    source_host: internalOwned ? 'arvectum.com' : 'compliance-fixture.invalid',
     baseline, rejected, accepted,
     limitations: [
-      'No public network, fixture-only gateway over stdio',
+      internalOwned ? 'One owned-site document GET; no DNS proof, no subresources transmitted' : 'No public network, fixture-only gateway over stdio',
       'Blocked request hostnames count as attempts, never confirmed transmissions',
     ],
   };
