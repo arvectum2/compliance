@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/usr/bin/env bash
 # Offline Chromium in a Linux network namespace with no egress.
 set -euo pipefail
 repo="$(CDPATH='' cd "$(dirname "$0")/.." && pwd)"
