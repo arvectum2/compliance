@@ -1,27 +1,52 @@
 # Arvectum Compliance
 
-Платформа для проверки сайтов, фиксации технических доказательств,
-управляемых исправлений и непрерывного контроля изменений. На текущем
-этапе это репозиторий архитектуры и подготовки разработки;
-промышленный сканер и SaaS ещё не реализованы.
+Переиспользуемое ядро технической проверки сайтов: формы, видимые ссылки
+на документы и структурированные находки. **Не является юридическим
+заключением** о соответствии 152-ФЗ. Публичный SaaS ещё не запущен.
 
-## Архитектура
+## Текущий статус
 
-- Data Platform — универсальный обход страниц, извлечение, хранение, поиск и SDK.
-- Compliance Core (будет разработан) — версии правил, проверки форм/cookies,
-  проверяемые находки и доказательства, контролируемые исправления.
-- Compliance SaaS (будет разработан) — организации, сайты, роли, тарифы,
-  отчёты, мониторинг, уведомления.
-- Интеграции — публичные версионированные API, CLI, SDK и CI.
+- AC-00: Spec Kit 1.2.4, разделение core/Data Platform, скрипты CI, политика
+  границ безопасности и двухсторонний проектный реестр — реализованы.
+- AC-01: работающий **офлайн статический** анализ HTML и ограниченный
+  одноадресный HTTP GET — реализованы, браузерный анализ cookies ещё не готов.
+- AC-02+: юридические пакеты правил, SaaS, мониторинг и PR-исправления — впереди.
 
-Программная проверка не является гарантией полного юридического соответствия.
+## Быстрый старт
+
+```bash
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -e '.[dev]'
+.venv/bin/ruff check src tests
+.venv/bin/pytest -q
+.venv/bin/arvectum-compliance scan-html tests/fixtures/review.html --url https://example.com
+```
+
+Сеть и внешние ключи для офлайн-режима не нужны. Для разрешённого
+одноадресного HTTP-сканирования установить `'.[data-platform]'` и вызвать
+`scan-url https://owned.example --authorized`. Это **не** production
+multi-tenant worker: до публичного запуска требуется сетевой sandbox.
+Формы не отправляются, JS не выполняется, редиректы запрещены.
+
+## Использование как библиотеки
+
+```python
+from arvectum_compliance import scan_html
+report = scan_html("https://example.com/contact", "<form><input type='email'></form>")
+print(report.to_dict())
+```
+
+## Документы
+
+- [Текущий roadmap](docs/ROADMAP.md)
+- [Архитектура, интерфейсы и reuse](docs/ARCHITECTURE.md)
+- [Feature 001 / Spec Kit](specs/001-foundation-and-static-scan/spec.md)
+- [Feature 002 / browser next](specs/002-browser-consent-observation/spec.md)
+- [Синхронизация](docs/SYNC.md)
+- [ADR](docs/adr/0001-core-and-data-platform.md)
 
 ## Репозитории
 
-GitHub (канонический): https://github.com/arvectum2/compliance
-
-GitVerse (зеркало): https://gitverse.ru/arvectum/compliance
-
-Mac mini: /Volumes/ArvectumSSD/Arvectum/repos/compliance
-
-Документы: docs/ROADMAP.md и docs/SYNC.md
+GitHub — https://github.com/arvectum2/compliance (канонический)
+GitVerse — https://gitverse.ru/arvectum/compliance (зеркало)
+Mac mini — `/Volumes/ArvectumSSD/Arvectum/repos/compliance`

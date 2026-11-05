@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arvectum-compliance"
+version = "0.1.0"
+description = "Evidence-first Arvectum website compliance signals"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.optional-dependencies]
+data-platform = ["arvectum-data @ git+https://github.com/arvectum2/data-platform.git@d341731664bdc4bc6bb5e8fdeef3df00706c72bd"]
+dev = ["pytest>=8.3,<10", "ruff>=0.8,<1.0"]
+
+[project.scripts]
+arvectum-compliance = "arvectum_compliance.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
