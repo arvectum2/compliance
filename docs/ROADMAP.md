@@ -59,3 +59,13 @@ EG-003b: фактический HTTPS gateway service в этом namespace ещ
 `arvectum.com` browser smoke (только GET главной страницы, HTTP 200).
 EG-003b2 (настоящее DNS proof, auth/RBAC, IPv6/DNS security review,
 subresource/redirect isolation) остаётся блокером публичного SaaS.
+
+## EG-003b2 — управление организациями и проверкой DNS
+Подготовлен внутренний контрольный контур: private tenant RBAC,
+256-bit токены только в хешированном виде, SQLite rate limits,
+настоящая проверка TXT через HTTPS (Cloudflare + Google), подписанный
+`gateway-v2` с ограничением статических субресурсов и локальный
+операторский CLI. Запрос реального DNS arvectum.com пока возвращает
+отсутствие опубликованного challenge — доступ не выдан.
+Публичная регистрация организаций, защищённая доставка grant в gateway
+и независимый аудит остаются NO-GO.

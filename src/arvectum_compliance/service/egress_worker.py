@@ -79,7 +79,9 @@ def handle_fetch(msg: object, gateway: GatewaySession, *, expected_id: int) -> d
     ):
         return result
     try:
-        response = gateway.get(msg["url"])
+        response = gateway.get(
+            msg["url"], resource_type=msg["resource_type"],
+        )
     except (ValueError, OSError, RuntimeError):
         return result
     if not 200 <= response.status < 300 or len(response.body) > 1_000_000:

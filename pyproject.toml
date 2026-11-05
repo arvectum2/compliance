@@ -18,6 +18,7 @@ dev = ["pytest>=8.3,<10", "ruff>=0.8,<1.0"]
 
 [project.scripts]
 arvectum-compliance = "arvectum_compliance.cli:main"
+arvectum-compliance-admin = "arvectum_compliance.service.operator_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

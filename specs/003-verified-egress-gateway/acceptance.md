@@ -48,3 +48,23 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
   deadlines; partial-line stalls and oversized frames are negative-tested.
 - The dedicated Docker gateway image includes the actual Python service
   without exposing ports or accepting arbitrary target URLs.
+
+## Trusted control plane — EG-001d1–d3, EG-003b2a
+
+- New `service/tenant_auth.py` uses 256-bit random tokens hashed at rest,
+  explicit RBAC scopes and SQLite atomic quota windows.
+- `service/verified_jobs.py` requires `confirm_challenge` to perform a
+  real DNS lookup before it can issue `gateway-v2` grants; in unit tests
+  only, the resolver is replaced by an in-memory fixture.
+- `service/dns_doh.py` queries fixed Cloudflare/Google endpoints over HTTPS;
+  validates responses/record names, rejects redirects and refuses missing or
+  inconsistent TXT answers. Actual `arvectum.com` read-only check returned
+  **no verified proof**, correctly preventing authorization.
+- `service/resource_scope.py` denies arbitrary origin, API, XHR, POST,
+  paths with query strings, unsafe extensions and traversal; gateway-v2
+  enforces this before fetching.
+- `service/operator_cli.py` creates private 0700 state, 0600 keys/tokens
+  and signed grant files with no bearer token in output.
+- PUBLIC NO-GO: production account authentication, DNSSEC review,
+  signed grant deployment into gateway, durable distributed storage
+  and independent red-team E2E are not complete.

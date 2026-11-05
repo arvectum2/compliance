@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from unittest.mock import Mock
 
 import pytest
 
@@ -118,3 +119,46 @@ def test_oversized_url_refused():
     with pytest.raises(ProofError):
         gateway.get("https://example.com/" + "x" * 3000, now=NOW + 3)
     assert not calls
+
+
+@pytest.mark.parametrize(("url", "resource"), [
+    ("https://example.com/api/data", "document"),
+    ("https://example.com/contact", "document"),
+    ("https://example.com/image.png?access_token=secret", "image"),
+    ("https://example.com/admin/app.js", "script"),
+    ("https://example.com/site.css", "xhr"),
+    ("https://example.com/assets/../image.png", "image"),
+])
+def test_signed_v2_gateway_rejects_non_static_or_ambiguous_paths(url, resource):
+    registry = OwnershipRegistry()
+    pending = registry.issue("tenant_1", "example.com", now=NOW)
+    proof = registry.confirm("tenant_1", pending.id,
+                             lambda _: [pending.record_value], now=NOW + 1)
+    issuer = GrantIssuer(registry, b"K" * 32)
+    grant = issuer.issue(proof, "job_v2", now=NOW + 2, policy_version="gateway-v2")
+    fetch = Mock()
+    gateway = GatewaySession(
+        issuer, grant, tenant_id="tenant_1", job_id="job_v2", fetcher=fetch,
+    )
+    with pytest.raises(ProofError, match="static-only"):
+        gateway.get(url, resource_type=resource, now=NOW + 3)
+    fetch.assert_not_called()
+
+
+def test_signed_v2_gateway_permits_only_expected_same_origin_static_get():
+    registry = OwnershipRegistry()
+    pending = registry.issue("tenant_1", "example.com", now=NOW)
+    proof = registry.confirm("tenant_1", pending.id,
+                             lambda _: [pending.record_value], now=NOW + 1)
+    issuer = GrantIssuer(registry, b"K" * 32)
+    grant = issuer.issue(proof, "job_v2", now=NOW + 2, policy_version="gateway-v2")
+    def fake_fetch(url, **opts):
+        assert url.endswith("/assets/site.css")
+        return PinnedResponse(200, "text/css", b"body{}")
+    gateway = GatewaySession(
+        issuer, grant, tenant_id="tenant_1", job_id="job_v2", fetcher=fake_fetch,
+    )
+    assert gateway.get(
+        "https://example.com/assets/site.css", resource_type="stylesheet",
+        now=NOW + 3,
+    ).body == b"body{}"

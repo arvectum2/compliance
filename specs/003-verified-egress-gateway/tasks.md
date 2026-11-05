@@ -3,17 +3,23 @@
 - [x] EG-001a DNS TXT one-use challenge, TTL, nonce hash and tenant binding.
 - [x] EG-001b Restricted SQLite store, atomic verify, restart and revocation.
 - [x] EG-001c HMAC-signed exact-host per-job grant with limits.
-- [ ] EG-001d Real account/RBAC integration, trusted external DNS validation,
-      denial-of-service limits and multi-node store. BLOCKS LIVE.
+- [x] EG-001d1 Internal tenant-scoped bearer token registry, role scopes
+      and atomic per-tenant hourly quotas (single-host SQLite).
+- [x] EG-001d2 Real DNS-over-HTTPS TXT agreement from independent TLS
+      resolvers; missing DNS proof rejects scan authorization.
+- [x] EG-001d3 Internal operator CLI with 0600 token/grant files.
+- [ ] EG-001d4 Production user login/RBAC, external DNS threat review,
+      multi-node datastore and signing-key management. BLOCKS PUBLIC.
 - [x] EG-002a Strict stdio IPC bridge, deny-by-default request envelope and caps.
 - [ ] EG-002b Production broker job management, observability and retention.
 - [x] EG-003a Temporary Linux gateway namespace with nftables output policy,
       root-to-nonroot capability drop and negative/positive kernel probes.
 - [x] EG-003b1 Python HTTPS GatewaySession runs inside the isolated
       nftables namespace; no published ports; stdio IPC to no-network browser.
-- [ ] EG-003b2 Real DNS-verified, authenticated tenant authorization and
-      independent IPv6/DNS/subresource threat tests before public use.
-      **Hard security gate, not yet satisfied.**
+- [x] EG-003b2a Separate trusted control-plane proof-to-signed-v2 grant,
+      with dual DoH and strict same-origin static resource policy.
+- [ ] EG-003b2b Secure attested grant handoff into actual gateway container;
+      independent IPv6/DNS/subresource network threat tests. BLOCKS PUBLIC.
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
 - [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.
 - [x] EG-005a No-network Chromium ↔ signed gateway ↔ synthetic HTML end-to-end.

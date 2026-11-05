@@ -47,3 +47,40 @@ def lookup_ownership_txt(
         except UnicodeError as exc:
             raise ProofError("Non-ASCII TXT content") from exc
     return entries
+
+
+def lookup_quorum_txt(
+    record_name: str, *, resolver_factory=None,
+) -> list[str]:
+    """Fail-closed DNS TXT lookup from independent public recursive resolvers.
+
+    Both must return the identical complete TXT record set. This is NOT
+    cryptographic DNSSEC validation. Use trusted resolver networking and an
+    independent security review before public multi-tenant deployment.
+    """
+    # DNS spoofing and propagation uncertainty must never turn into success.
+    resolvers = ("1.1.1.1", "9.9.9.9")
+    if resolver_factory is None:
+        try:
+            import dns.resolver
+        except ImportError as exc:
+            raise ProofError("Install optional DNS resolver dependency") from exc
+
+        def resolver_factory(nameserver: str):
+            resolver = dns.resolver.Resolver(configure=False)
+            resolver.nameservers = [nameserver]
+            resolver.timeout = 2.0
+            resolver.lifetime = 3.0
+            return resolver
+
+    seen: list[set[str]] = []
+    for nameserver in resolvers:
+        values = lookup_ownership_txt(
+            record_name, resolver=resolver_factory(nameserver),
+        )
+        if not values:
+            raise ProofError("Ownership DNS TXT not present on both resolvers")
+        seen.append(set(values))
+    if seen[0] != seen[1]:
+        raise ProofError("Ownership DNS TXT disagrees across resolvers")
+    return sorted(seen[0])

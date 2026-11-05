@@ -102,3 +102,14 @@ Python GatewaySession теперь выполняется внутри отде�
 
 См. [технический отчёт](docs/EGRESS_GATEWAY.md) и
 [ADR-0003](docs/adr/0003-isolated-python-egress.md).
+
+## EG-003b2 — private authorization control plane
+
+Реализован внутренний операторский контур:
+`arvectum-compliance-admin` и Python API `VerifiedScanService`.
+Домен можно подтвердить только опубликованной DNS TXT-записью,
+проверяемой через два HTTPS-резолвера. Подписанные `gateway-v2`
+разрешения ограничивают сетевые ресурсы. Реальные внешние сканы без
+действующего подтверждения по-прежнему запрещены.
+
+[Инструкция оператора](docs/CONTROL_PLANE.md).

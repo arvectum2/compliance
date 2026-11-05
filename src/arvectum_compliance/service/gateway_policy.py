@@ -9,6 +9,7 @@ from arvectum_compliance.adapters.pinned_http import PinnedResponse, fetch_publi
 
 from .authorization import GrantIssuer, ScanGrant
 from .domain_proof import ProofError, canonical_hostname
+from .resource_scope import allowed_same_origin
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,7 +38,10 @@ class GatewaySession:
         self._bytes = 0
         self._lock = threading.Lock()
 
-    def get(self, url: str, *, now: int | None = None) -> GatewayResult:
+    def get(
+        self, url: str, *, resource_type: str = "document",
+        now: int | None = None,
+    ) -> GatewayResult:
         # Lock also covers IO, preventing concurrent requests from bypassing
         # the shared job budget (serialized by design).
         with self._lock:
@@ -59,6 +63,10 @@ class GatewaySession:
                 raise ProofError("Invalid hostname or port") from exc
             if port not in (None, 443) or host != self._grant.hostname:
                 raise ProofError("Hostname or port outside exact authorization scope")
+            if self._grant.policy_version == "gateway-v2" and not allowed_same_origin(
+                self._grant.hostname, url, resource_type=resource_type,
+            ):
+                raise ProofError("Resource outside signed static-only scope")
             if self._requests >= self._grant.max_requests:
                 raise ProofError("Request budget exhausted")
             remaining = self._grant.max_bytes - self._bytes

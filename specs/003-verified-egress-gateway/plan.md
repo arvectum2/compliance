@@ -65,3 +65,19 @@ and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
   stored DNS TXT proof is claimed. Root HTML is not persisted.
 - Next: real account/DNS ownership and independent external egress review
   before network subresources or any multi-tenant endpoint.
+
+## EG-003b2a — trusted domain-control plane (2026-11-06)
+
+- `TenantAuth` stores digest-only access tokens, explicit scopes and
+  transactional per-tenant quotas in 0600 SQLite.
+- `VerifiedScanService` is internal-only and requires a confirmed DNS TXT
+  proof. Default DoH uses Cloudflare and Google HTTPS endpoints; providers
+  must agree exactly. No fallback to fake DNS for operational commands.
+- `GrantIssuer` signs `gateway-v2` capabilities, and `GatewaySession`
+  checks same-origin static-only path/type constraints before HTTP fetch.
+- `arvectum-compliance-admin` is a local command for creating a challenge,
+  DNS verification, signed grants and revocation; secrets stay in 0600 files.
+- Actual read-only DoH lookup for `arvectum.com` failed closed because
+  ownership TXT is not published. This must NOT be interpreted as verified.
+- Remaining: bind real signed grant/DB to protected container, production
+  identity and tenancy, independent subresource/DNS threat review.

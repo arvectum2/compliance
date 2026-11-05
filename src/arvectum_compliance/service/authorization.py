@@ -47,10 +47,13 @@ class GrantIssuer:
         self, proof: VerifiedProof, job_id: str, *,
         now: int | None = None, ttl_seconds: int = 300,
         max_requests: int = 40, max_bytes: int = 1_000_000,
+        policy_version: str = "gateway-v1",
     ) -> ScanGrant:
         job_id = _identifier(job_id)
         current = int(time.time()) if now is None else int(now)
         self._registry.check(proof, now=current)
+        if policy_version not in {"gateway-v1", "gateway-v2"}:
+            raise ValueError("Unknown signed gateway policy")
         if not 1 <= ttl_seconds <= 300:
             raise ValueError("Grant TTL must be between 1 and 300 seconds")
         if not 1 <= max_requests <= 100 or not 1 <= max_bytes <= 2_000_000:
@@ -58,7 +61,7 @@ class GrantIssuer:
         unsigned = ScanGrant(
             proof.tenant_id, job_id, proof.id, proof.hostname, proof.expires_at, current,
             min(current + ttl_seconds, proof.expires_at),
-            max_requests, max_bytes, "gateway-v1", secrets.token_hex(16), "",
+            max_requests, max_bytes, policy_version, secrets.token_hex(16), "",
         )
         return ScanGrant(**{**asdict(unsigned), "signature": self._sign(unsigned.payload())})
 
@@ -79,7 +82,7 @@ class GrantIssuer:
         if (
             grant.tenant_id != _identifier(tenant_id)
             or grant.job_id != _identifier(job_id)
-            or grant.policy_version != "gateway-v1"
+            or grant.policy_version not in {"gateway-v1", "gateway-v2"}
             or current < grant.not_before
             or current >= grant.expires_at
         ):

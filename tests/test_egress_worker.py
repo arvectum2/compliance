@@ -17,7 +17,9 @@ def test_allow_exact_get_with_bounded_reply():
     gateway.get.return_value = PinnedResponse(200, "text/html", b"<html/>")
     reply = handle_fetch(message(), gateway, expected_id=1)
     assert reply["allowed"] is True
-    gateway.get.assert_called_once_with("https://compliance-fixture.invalid/")
+    gateway.get.assert_called_once_with(
+        "https://compliance-fixture.invalid/", resource_type="document",
+    )
 
 
 @pytest.mark.parametrize("bad", [

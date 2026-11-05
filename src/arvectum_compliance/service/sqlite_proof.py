@@ -130,6 +130,21 @@ class SqliteOwnershipRegistry:
         ):
             raise ProofError("Verified domain ownership is no longer active")
 
+    def get_verified(
+        self, tenant_id: str, proof_id: str, *, now: int | None = None,
+    ) -> VerifiedProof:
+        """Read a current tenant-bound proof from persistent trusted storage."""
+        tenant_id = _identifier(tenant_id)
+        current = int(time.time()) if now is None else int(now)
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT hostname, expires_at, status FROM domain_proofs "
+                "WHERE id=? AND tenant=?", (proof_id, tenant_id),
+            ).fetchone()
+        if row is None or row[2] != "verified" or current >= row[1]:
+            raise ProofError("Verified proof unavailable")
+        return VerifiedProof(proof_id, tenant_id, row[0], row[1])
+
     def revoke(self, tenant_id: str, proof_id: str) -> None:
         tenant_id = _identifier(tenant_id)
         with self._connect() as db:

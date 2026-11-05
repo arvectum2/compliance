@@ -71,3 +71,18 @@ Browser image sha256:
 No production website, external DNS, customer DB or background daemon
 was modified; stopping the Docker test terminates the workflow. Roll back
 through the designated Git commit. Data Platform remains unchanged.
+
+## Latest work — EG-003b2a (2026-11-06)
+
+A new trusted *control-plane library* and local operator CLI implement
+tenant bearer authentication, scoped permissions, hashed token storage,
+atomic tenant quotas, true DNS-over-HTTPS challenge confirmation and signed
+`gateway-v2` static-only resource grants. All negative tests run offline;
+a read-only public DNS query found no `arvectum.com` proof, so access
+was correctly denied. See docs/CONTROL_PLANE.md.
+
+**The current isolated runtime's `internal-owned` mode remains a
+hardcoded QA-only exception with synthetic proof.** It is not wired to
+`VerifiedScanService`, and cannot be exposed to external users. The
+secure transfer of real signed `gateway-v2` grants into a revocation-aware
+gateway remains an explicit release blocker.
