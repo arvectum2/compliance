@@ -2,6 +2,11 @@ name: Compliance Browser Docker E2E
 on:
   push:
     paths:
+      - 'src/arvectum_compliance/service/attested_ipc.py'
+      - 'src/arvectum_compliance/service/attested_gateway.py'
+      - 'src/arvectum_compliance/adapters/attested_bridge.py'
+      - 'scripts/run-egress-attested-fixture.sh'
+      - 'tests/test_attested_docker.py'
       - 'infra/egress/Dockerfile.gateway'
       - 'infra/egress/entrypoint.sh'
       - 'infra/egress/nftables.nft'
@@ -19,6 +24,11 @@ on:
       - '.github/workflows/browser-docker-e2e.yml'
   pull_request:
     paths:
+      - 'src/arvectum_compliance/service/attested_ipc.py'
+      - 'src/arvectum_compliance/service/attested_gateway.py'
+      - 'src/arvectum_compliance/adapters/attested_bridge.py'
+      - 'scripts/run-egress-attested-fixture.sh'
+      - 'tests/test_attested_docker.py'
       - 'infra/egress/Dockerfile.gateway'
       - 'infra/egress/entrypoint.sh'
       - 'infra/egress/nftables.nft'
@@ -63,4 +73,4 @@ jobs:
       - name: Docker security and two-container browser E2E
         env:
           COMPLIANCE_DOCKER_E2E: '1'
-        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py tests/test_isolated_gateway_docker.py
+        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py tests/test_isolated_gateway_docker.py tests/test_attested_docker.py

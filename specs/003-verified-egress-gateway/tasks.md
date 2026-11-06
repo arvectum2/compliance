@@ -18,8 +18,13 @@
       nftables namespace; no published ports; stdio IPC to no-network browser.
 - [x] EG-003b2a Separate trusted control-plane proof-to-signed-v2 grant,
       with dual DoH and strict same-origin static resource policy.
-- [ ] EG-003b2b Secure attested grant handoff into actual gateway container;
-      independent IPv6/DNS/subresource network threat tests. BLOCKS PUBLIC.
+- [x] EG-003b2b1 Ed25519-attested gateway-v2 leases and per-request permits,
+      public verification key mounted read-only into nftables container.
+- [x] EG-003b2b2 Proof revocation rechecked before each signed request;
+      real dual-container negative E2E for tamper and mid-job revocation.
+- [ ] EG-003b2b3 Production key management, trusted launch of real
+      DNS-verified grants and independent IPv6/DNS/subresource threat
+      tests. BLOCKS PUBLIC.
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
 - [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.
 - [x] EG-005a No-network Chromium ↔ signed gateway ↔ synthetic HTML end-to-end.

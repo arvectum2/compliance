@@ -68,3 +68,20 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
 - PUBLIC NO-GO: production account authentication, DNSSEC review,
   signed grant deployment into gateway, durable distributed storage
   and independent red-team E2E are not complete.
+
+
+## Signed gateway handoff — EG-003b2b1/b2 (offline fixtures)
+- `HostAttestor` signs Ed25519 leases ONLY after `GrantIssuer.require_active`
+  validates HMAC and proof revocation against a trusted registry.
+- Per-request signed permits bind exact URL SHA-256, resource type, monotonic
+  sequence, lease nonce and at-most-3-second expiry. Proof rechecked before
+  EACH new permit. Container has only Ed25519 public key (readonly mount).
+- Gateway `AttestedGatewaySession` checks lease/permit cryptographically,
+  independently verifies static path/host, and enforces byte/request quotas.
+- Actual Chromium (--network none) ↔ host IPC ↔ nftables Python gateway E2E
+  covers approved fixtures, tampering and mid-job revocation.
+- Test harness creates local fake DNS proof for .invalid hostname and
+  ephemeral signing keys, not production DNS or live customer traffic.
+- Note: in-flight requests are not forcibly cancelled; previously issued
+  permit can remain valid for up to 3 seconds. Real proof for arvectum.com
+  remains absent. Production NO-GO.

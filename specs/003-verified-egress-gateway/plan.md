@@ -81,3 +81,15 @@ and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
   ownership TXT is not published. This must NOT be interpreted as verified.
 - Remaining: bind real signed grant/DB to protected container, production
   identity and tenancy, independent subresource/DNS threat review.
+
+
+## EG-003b2b — independently verified IPC (2026-11-06)
+- HMAC grant remains private in control plane.
+- Ed25519 public verification key only (readonly file mount) in gateway.
+- Gateway requires signed v2 lease handshake and a short signed permit
+  per request. Host checks persistent proof revocation before signing.
+- No unbounded route.continue; browser still --network none.
+- E2E tests signed lease, request binding, replay, expiry, missing key,
+  malformed/tampered messages, and mid-job revocation.
+- Production secret manager, real domain proof, independent security
+  review and in-flight cancellation remain outstanding.

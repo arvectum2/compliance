@@ -14,7 +14,15 @@ import secrets
 import sys
 from pathlib import Path
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
 from arvectum_compliance.adapters.pinned_http import PinnedResponse
+from arvectum_compliance.service.attested_gateway import AttestedGatewaySession
+from arvectum_compliance.service.attested_ipc import (
+    GatewayAttestor,
+    SignedLease,
+    SignedPermit,
+)
 from arvectum_compliance.service.authorization import GrantIssuer
 from arvectum_compliance.service.domain_proof import OwnershipRegistry
 from arvectum_compliance.service.gateway_policy import GatewaySession
@@ -93,6 +101,75 @@ def handle_fetch(msg: object, gateway: GatewaySession, *, expected_id: int) -> d
     }
 
 
+
+def _read_attested_public_key() -> Ed25519PublicKey:
+    """Container receives public verification key from a read-only Docker bind."""
+    path = Path("/run/compliance/attestor.pub")
+    if path.is_symlink() or not path.is_file() or path.stat().st_size != 32:
+        raise ValueError("Missing independent attestation public key")
+    return Ed25519PublicKey.from_public_bytes(path.read_bytes())
+
+
+def serve_attested_fixture(fixture: str) -> int:
+    """Test-only .invalid fixtures, but REAL signed authorization is mandatory."""
+    if os.geteuid() != 65532 and os.environ.get("COMPLIANCE_UNIT_TEST") != "1":
+        raise RuntimeError("Gateway requires unprivileged service account")
+    if fixture not in FIXTURES:
+        return 2
+    try:
+        verifier = GatewayAttestor(_read_attested_public_key())
+        line = sys.stdin.buffer.readline(8193)
+        if not line or len(line) > 8192:
+            return 2
+        start = json.loads(line)
+        if not isinstance(start, dict) or set(start) != {"kind", "lease"}:
+            return 2
+        lease = SignedLease.parse(start["lease"])
+        if lease.hostname != FIXTURE_SITE:
+            return 2
+        html = (Path("/opt/compliance/fixtures") / fixture).read_bytes()
+        if len(html) > 200_000:
+            return 2
+
+        def fixture_fetch(url: str, **_opts) -> PinnedResponse:
+            if url == f"https://{FIXTURE_SITE}/":
+                return PinnedResponse(200, "text/html; charset=utf-8", html)
+            return PinnedResponse(204, "text/plain", b"")
+
+        gateway = AttestedGatewaySession(verifier, lease, fetcher=fixture_fetch)
+        sys.stdout.write('{"kind":"ready"}\n')
+        sys.stdout.flush()
+    except (ValueError, TypeError, OSError):
+        return 2
+    for sequence, line in enumerate(sys.stdin.buffer, 1):
+        if sequence > MAX_MESSAGES or len(line) > 8192:
+            return 2
+        try:
+            msg = json.loads(line)
+            if not isinstance(msg, dict) or set(msg) != {
+                "kind", "id", "url", "method", "resource_type", "permit"
+            } or msg["kind"] != "fetch" or msg["method"] != "GET":
+                return 2
+            if type(msg["id"]) is not int or msg["id"] != sequence:
+                return 2
+            permit = SignedPermit.parse(msg["permit"])
+            response = gateway.get(
+                msg["url"], sequence=sequence,
+                resource_type=msg["resource_type"], permit=permit,
+            )
+            reply = {
+                "kind": "reply", "id": sequence, "allowed": True,
+                "status": response.status, "content_type": response.content_type[:128],
+                "body_b64": base64.b64encode(response.body).decode("ascii"),
+            }
+        except (ValueError, TypeError, OSError, RuntimeError):
+            # Denied: never echo an untrusted URL, token, or proof.
+            reply = {"kind": "reply", "id": sequence, "allowed": False}
+        sys.stdout.write(json.dumps(reply, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
+    return 0
+
+
 def _owned_document_only(message: object) -> bool:
     """Manual internal smoke sends exactly one safe document GET per phase."""
     return (
@@ -139,4 +216,6 @@ if __name__ == "__main__":
         raise SystemExit(serve("fixture", argv[1]))
     if len(argv) == 1 and argv[0] == "internal-owned":
         raise SystemExit(serve("internal-owned"))
+    if len(argv) == 2 and argv[0] == "attested-fixture" and argv[1] in FIXTURES:
+        raise SystemExit(serve_attested_fixture(argv[1]))
     raise SystemExit("Usage: egress_worker.py fixture <approved-name> | internal-owned")

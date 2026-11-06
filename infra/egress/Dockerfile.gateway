@@ -1,7 +1,7 @@
 # Stage EG-003b: isolated stdio gateway, no ports or network-facing services.
 # Built from repository root. Not a public multi-tenant service.
 FROM nginx:stable-alpine@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5
-RUN apk add --no-cache nftables util-linux python3 ca-certificates \
+RUN apk add --no-cache nftables util-linux python3 py3-cryptography ca-certificates \
  && addgroup -S compliance -g 65532 \
  && adduser -S -D -H -u 65532 -G compliance compliance
 COPY infra/egress/nftables.nft /etc/compliance-egress.nft
@@ -9,7 +9,9 @@ COPY infra/egress/entrypoint.sh /usr/local/bin/compliance-egress-start
 COPY src/arvectum_compliance /opt/compliance/python/arvectum_compliance
 COPY tests/browser-fixtures /opt/compliance/fixtures
 ENV PYTHONPATH=/opt/compliance/python PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-RUN chmod 0555 /usr/local/bin/compliance-egress-start \
+RUN mkdir -p /run/compliance && touch /run/compliance/attestor.pub \
+ && chmod 0444 /run/compliance/attestor.pub \
+ && chmod 0555 /usr/local/bin/compliance-egress-start \
  && chmod 0444 /etc/compliance-egress.nft \
  && chmod -R a+rX /opt/compliance/python /opt/compliance/fixtures
 ENTRYPOINT ["/usr/local/bin/compliance-egress-start"]
