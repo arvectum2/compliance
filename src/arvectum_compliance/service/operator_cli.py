@@ -40,7 +40,7 @@ def _read_secret(path: Path) -> bytes:
     contents = path.read_bytes()
     if not contents or len(contents) > 512:
         raise ProofError("Invalid secret file")
-    return contents.strip()
+    return contents
 
 
 def _write_secret(path: Path, body: bytes) -> None:
@@ -88,6 +88,12 @@ def _parser() -> argparse.ArgumentParser:
     revoke = commands.add_parser("revoke")
     revoke.add_argument("--token-file", type=Path, required=True)
     revoke.add_argument("--proof-id", required=True)
+    commands.add_parser("attestor-init", help="Initialize private Ed25519 signing identity")
+    commands.add_parser("attestor-info", help="Show public signing-key fingerprint")
+    smoke = commands.add_parser("verified-root", help="Single verified root HTTPS GET")
+    smoke.add_argument("--token-file", type=Path, required=True)
+    smoke.add_argument("--proof-id", required=True)
+    smoke.add_argument("--job-id", required=True)
     return parser
 
 
@@ -108,7 +114,28 @@ def main(argv: list[str] | None = None) -> int:
             _write_secret(token_path, token.encode("ascii"))
             print(json.dumps({"tenant": tenant, "token_file": str(token_path)}))
             return 0
+        if args.command in ("attestor-init", "attestor-info"):
+            from .attestor_keys import load_attestor_identity
+
+            identity = load_attestor_identity(
+                root, initialize=args.command == "attestor-init",
+            )
+            print(json.dumps({
+                "public_fingerprint": identity.public_fingerprint,
+                "public_key_file": str(identity.public_path),
+            }, sort_keys=True))
+            return 0
         token = _read_secret(args.token_file).decode("ascii")
+        if args.command == "verified-root":
+            from .attestor_keys import load_attestor_identity
+            from .verified_root import run_verified_root
+
+            identity = load_attestor_identity(root)
+            result = run_verified_root(
+                service, identity, token, args.proof_id, args.job_id,
+            )
+            print(json.dumps(result, sort_keys=True))
+            return 0
         if args.command == "challenge":
             result = service.issue_challenge(token, args.host)
             print(json.dumps(asdict(result), sort_keys=True))
@@ -123,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
             service.revoke_domain(token, args.proof_id)
             print('{"status":"revoked"}')
         return 0
-    except (ProofError, OSError, UnicodeError, ValueError) as exc:
+    except (ProofError, OSError, UnicodeError, ValueError, RuntimeError) as exc:
         # Never show bearer token or exact sensitive files in raw error strings.
         print(f"ERROR: {type(exc).__name__}; operator action failed", file=sys.stderr)
         return 2

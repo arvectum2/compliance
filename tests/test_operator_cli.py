@@ -18,7 +18,9 @@ def test_full_internal_operator_flow_uses_local_files_not_stdout_secrets(
 ):
     state = tmp_path / "private"
     rc, out, err = call(capsys, state, "provision", "--tenant", "org_A")
-    assert rc == 0 and not err
+    assert rc == 0 and not err, (
+        rc, out, err, list(state.iterdir()) if state.exists() else "absent",
+    )
     token_path = state / "tenant-org_A.token"
     token = token_path.read_text()
     assert token.startswith("acp_")
@@ -104,3 +106,49 @@ def test_second_provision_or_world_readable_state_is_refused(tmp_path, capsys):
     assert call(capsys, state, "provision", "--tenant", "org_A")[0] == 2
     os.chmod(state, 0o755)
     assert call(capsys, state, "provision", "--tenant", "org_B")[0] == 2
+
+
+def test_operator_attestor_init_info_and_no_overwrite(tmp_path, capsys):
+
+    state = tmp_path / "private"
+    setup_status = call(capsys, state, "provision", "--tenant", "org_A")
+    assert setup_status[0] == 0, setup_status
+    rc, out, _ = call(capsys, state, "attestor-init")
+    assert rc == 0
+    fingerprint = json.loads(out)["public_fingerprint"]
+    assert len(fingerprint) == 64
+    assert os.stat(state / "attestor-ed25519.key").st_mode & 0o777 == 0o600
+    rc, out, _ = call(capsys, state, "attestor-info")
+    assert rc == 0 and json.loads(out)["public_fingerprint"] == fingerprint
+    assert call(capsys, state, "attestor-init")[0] == 2
+
+
+def test_operator_verified_root_refuses_unknown_proof(tmp_path, capsys):
+    state = tmp_path / "private"
+    assert call(capsys, state, "provision", "--tenant", "org_A")[0] == 0
+    assert call(capsys, state, "attestor-init")[0] == 0
+    token_path = state / "tenant-org_A.token"
+    rc, out, err = call(
+        capsys, state, "verified-root",
+        "--token-file", str(token_path),
+        "--proof-id", "not_verified", "--job-id", "job_1",
+    )
+    assert rc == 2
+    assert not out
+    assert "ERROR" in err
+    assert "acp_" not in err
+
+
+def test_binary_signing_key_preserves_leading_trailing_whitespace(tmp_path, capsys, monkeypatch):
+    """Random 256-bit HMAC keys are raw bytes and must NEVER be stripped."""
+    from arvectum_compliance.service import operator_cli
+
+    example_key = b"\n" + b"x" * 30 + b" "
+    assert len(example_key) == 32
+    monkeypatch.setattr(operator_cli.secrets, "token_bytes", lambda size: example_key)
+    state = tmp_path / "private"
+    rc, out, err = call(capsys, state, "provision", "--tenant", "org_A")
+    assert rc == 0, (out, err)
+    assert (state / "signing.key").read_bytes() == example_key
+    assert operator_cli._read_secret(state / "signing.key") == example_key
+    assert call(capsys, state, "attestor-init")[0] == 0

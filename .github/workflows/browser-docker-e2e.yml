@@ -2,6 +2,10 @@ name: Compliance Browser Docker E2E
 on:
   push:
     paths:
+      - 'scripts/run-egress-attested-verified.sh'
+      - 'src/arvectum_compliance/service/attestor_keys.py'
+      - 'src/arvectum_compliance/service/verified_root.py'
+      - 'tests/test_verified_root_docker.py'
       - 'src/arvectum_compliance/service/attested_ipc.py'
       - 'src/arvectum_compliance/service/attested_gateway.py'
       - 'src/arvectum_compliance/adapters/attested_bridge.py'
@@ -24,6 +28,10 @@ on:
       - '.github/workflows/browser-docker-e2e.yml'
   pull_request:
     paths:
+      - 'scripts/run-egress-attested-verified.sh'
+      - 'src/arvectum_compliance/service/attestor_keys.py'
+      - 'src/arvectum_compliance/service/verified_root.py'
+      - 'tests/test_verified_root_docker.py'
       - 'src/arvectum_compliance/service/attested_ipc.py'
       - 'src/arvectum_compliance/service/attested_gateway.py'
       - 'src/arvectum_compliance/adapters/attested_bridge.py'
@@ -73,4 +81,4 @@ jobs:
       - name: Docker security and two-container browser E2E
         env:
           COMPLIANCE_DOCKER_E2E: '1'
-        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py tests/test_isolated_gateway_docker.py tests/test_attested_docker.py
+        run: pytest -q tests/test_browser_docker.py tests/test_bridge_docker.py tests/test_isolated_gateway_docker.py tests/test_attested_docker.py tests/test_verified_root_docker.py

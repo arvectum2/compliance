@@ -48,9 +48,18 @@ class SqliteOwnershipRegistry:
                     hostname TEXT NOT NULL,
                     challenge_hash TEXT NOT NULL,
                     expires_at INTEGER NOT NULL,
-                    status TEXT NOT NULL CHECK(status IN ('pending', 'verified', 'revoked'))
+                    status TEXT NOT NULL CHECK(status IN ('pending', 'verified', 'revoked')),
+                    verified_method TEXT NOT NULL DEFAULT 'legacy'
                 )
             """)
+            columns = {
+                row[1] for row in db.execute("PRAGMA table_info(domain_proofs)")
+            }
+            if "verified_method" not in columns:
+                db.execute(
+                    "ALTER TABLE domain_proofs ADD COLUMN verified_method "
+                    "TEXT NOT NULL DEFAULT 'legacy'"
+                )
 
     @contextmanager
     def _connect(self):
@@ -70,7 +79,9 @@ class SqliteOwnershipRegistry:
         digest = hashlib.sha256(nonce.encode("ascii")).hexdigest()
         with self._connect() as db:
             db.execute(
-                "INSERT INTO domain_proofs VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO domain_proofs "
+                "(id, tenant, hostname, challenge_hash, expires_at, status) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (challenge_id, tenant_id, hostname, digest, expires_at, "pending"),
             )
         return PendingProof(
@@ -81,8 +92,10 @@ class SqliteOwnershipRegistry:
     def confirm(
         self, tenant_id: str, proof_id: str,
         txt_lookup: Callable[[str], list[str] | tuple[str, ...]],
-        *, now: int | None = None,
+        *, now: int | None = None, verification_method: str = "offline-test",
     ) -> VerifiedProof:
+        if verification_method not in ("offline-test", "doh-quorum"):
+            raise ProofError("Unknown DNS ownership verification method")
         tenant_id = _identifier(tenant_id)
         current = int(time.time()) if now is None else int(now)
         with self._connect() as db:
@@ -108,9 +121,9 @@ class SqliteOwnershipRegistry:
             raise ProofError("Domain challenge not found")
         with self._connect() as db:
             cur = db.execute(
-                "UPDATE domain_proofs SET status='verified' "
+                "UPDATE domain_proofs SET status='verified', verified_method=? "
                 "WHERE id=? AND tenant=? AND status='pending' AND expires_at>?",
-                (proof_id, tenant_id, current),
+                (verification_method, proof_id, tenant_id, current),
             )
             if cur.rowcount != 1:
                 raise ProofError("Challenge already consumed, expired or revoked")
@@ -129,6 +142,26 @@ class SqliteOwnershipRegistry:
             ) or current >= proof.expires_at
         ):
             raise ProofError("Verified domain ownership is no longer active")
+
+    def require_dns_verified(
+        self, tenant_id: str, proof_id: str, *, now: int | None = None,
+    ) -> None:
+        """Only true dual-DoH proofs authorize non-fixture network requests.
+
+        Legacy/migrated proofs and injected offline resolvers are NO-GO.
+        """
+        tenant_id = _identifier(tenant_id)
+        current = int(time.time()) if now is None else int(now)
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT status, verified_method, expires_at FROM domain_proofs "
+                "WHERE id=? AND tenant=?", (proof_id, tenant_id),
+            ).fetchone()
+        if (
+            row is None or row[0] != "verified"
+            or row[1] != "doh-quorum" or current >= row[2]
+        ):
+            raise ProofError("Real DNS ownership proof required")
 
     def get_verified(
         self, tenant_id: str, proof_id: str, *, now: int | None = None,

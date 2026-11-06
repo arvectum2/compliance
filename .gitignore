@@ -15,3 +15,11 @@ node_modules/
 
 # Never publish the local developer-only browser variant.
 browser-worker/.dev-fixture-test.mjs
+
+*.key
+*.pub
+*.token
+**/*.key
+**/*.pub
+**/*.token
+**/private-state/**

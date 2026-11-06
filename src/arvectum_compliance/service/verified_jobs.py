@@ -32,6 +32,7 @@ class VerifiedScanService:
         self.proofs = proofs
         self.issuer = issuer
         self.dns_lookup = dns_lookup or lookup_doh_quorum_txt
+        self._real_dns_lookup = dns_lookup is None
 
     def issue_challenge(
         self, access_token: str, hostname: str, *, now: int | None = None,
@@ -49,7 +50,9 @@ class VerifiedScanService:
         self.auth.charge(principal, "domain:verify", limit=10, now=current)
         # Real TXT lookup by default, not caller-provided TXT strings.
         return self.proofs.confirm(
-            principal.tenant_id, challenge_id, self.dns_lookup, now=current,
+            principal.tenant_id, challenge_id, self.dns_lookup,
+            now=current,
+            verification_method="doh-quorum" if self._real_dns_lookup else "offline-test",
         )
 
     def authorize_scan(

@@ -85,3 +85,20 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
 - Note: in-flight requests are not forcibly cancelled; previously issued
   permit can remain valid for up to 3 seconds. Real proof for arvectum.com
   remains absent. Production NO-GO.
+
+
+## Real-proof-gated root request — EG-003b2c (2026-11-06)
+
+- Persistent Ed25519 host identity is in private 0700 state with a 0600
+  private seed; container receives only public key via read-only mount.
+- SQLite `verified_method` distinguishes `doh-quorum`, `offline-test`
+  and legacy data. Old schema migration does NOT promote existing proofs.
+- Trusted CLI requires scoped tenant token, live unrevoked DoH proof,
+  signed grant and fresh Ed25519 permit before creating Docker process.
+- Gateway executes ONE exact root HTML GET from the signed hostname,
+  rejecting URL/hostname/method/resource substitutions. Response stores
+  only status/count/SHA; no HTML, URL queries or cookies are saved.
+- Positive host-to-gateway path is simulated with signed offline fixtures;
+  actual Docker negative E2E checks forged lease and missing key.
+- Production DoH challenge for arvectum.com is NOT published; thus no
+  newly verified live root request was executed.

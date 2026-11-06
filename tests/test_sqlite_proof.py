@@ -74,3 +74,42 @@ def test_reject_symlink_database(tmp_path):
     alias.symlink_to(source)
     with pytest.raises(ProofError, match="Unsafe"):
         SqliteOwnershipRegistry(alias)
+
+
+def test_legacy_proofs_do_not_turn_into_production_ownership(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "legacy.db"
+    with sqlite3.connect(path) as db:
+        db.execute("""
+            CREATE TABLE domain_proofs(
+                id TEXT PRIMARY KEY, tenant TEXT, hostname TEXT,
+                challenge_hash TEXT, expires_at INTEGER, status TEXT
+            )
+        """)
+    import os
+    os.chmod(path, 0o600)
+    reg = SqliteOwnershipRegistry(path)  # schema migration, defaults to "legacy"
+    challenge = reg.issue("tenant_1", "example.com", now=NOW)
+    verified = reg.confirm(
+        "tenant_1", challenge.id, lambda _: [challenge.record_value],
+        now=NOW + 1,
+    )
+    reg.check(verified, now=NOW + 2)
+    with pytest.raises(ProofError, match="Real DNS"):
+        reg.require_dns_verified("tenant_1", verified.id, now=NOW + 2)
+
+
+def test_real_doh_method_accepts_but_offline_method_never_does(tmp_path):
+    reg = SqliteOwnershipRegistry(tmp_path / "proofs.db")
+    offline = reg.issue("tenant_1", "example.com", now=NOW)
+    v1 = reg.confirm("tenant_1", offline.id,
+                     lambda _: [offline.record_value], now=NOW + 1)
+    with pytest.raises(ProofError):
+        reg.require_dns_verified("tenant_1", v1.id, now=NOW + 2)
+    challenge = reg.issue("tenant_1", "example.com", now=NOW)
+    v2 = reg.confirm(
+        "tenant_1", challenge.id, lambda _: [challenge.record_value],
+        now=NOW + 1, verification_method="doh-quorum",
+    )
+    reg.require_dns_verified("tenant_1", v2.id, now=NOW + 2)

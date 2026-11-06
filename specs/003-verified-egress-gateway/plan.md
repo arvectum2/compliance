@@ -93,3 +93,12 @@ and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
   malformed/tampered messages, and mid-job revocation.
 - Production secret manager, real domain proof, independent security
   review and in-flight cancellation remain outstanding.
+
+
+## EG-003b2c — persistent key and proof provenance
+- Explicit key enrollment, no silent replacement on restart.
+- Proof method stored transactionally; offline/legacy confirmations NO-GO.
+- Trusted operator obtains v2 grant then launches nftables gateway with
+  only public Ed25519 key, signed lease and one root document permit.
+- Return only status, bytes and SHA-256, with post-fetch revocation check.
+- Full browser SaaS, real DNS enrollment and KMS require separate gates.

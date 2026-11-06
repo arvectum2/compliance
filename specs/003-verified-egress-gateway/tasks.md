@@ -22,9 +22,14 @@
       public verification key mounted read-only into nftables container.
 - [x] EG-003b2b2 Proof revocation rechecked before each signed request;
       real dual-container negative E2E for tamper and mid-job revocation.
-- [ ] EG-003b2b3 Production key management, trusted launch of real
-      DNS-verified grants and independent IPv6/DNS/subresource threat
-      tests. BLOCKS PUBLIC.
+- [x] EG-003b2c1 Explicit persistent Ed25519 signing identity (0700/0600)
+      with no silent replacement; public key only in gateway container.
+- [x] EG-003b2c2 Durable dual-DoH provenance; legacy and mock proofs
+      fail closed before verified-root launch.
+- [x] EG-003b2c3 Authenticated signed root-only HTTPS gateway smoke, no
+      arbitrary target argument and no saved response HTML.
+- [ ] EG-003b2c4 KMS/HSM rotation, real DNS-owned acceptance, independent
+      IPv6/DNS/subresource testing. BLOCKS PUBLIC.
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
 - [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.
 - [x] EG-005a No-network Chromium ↔ signed gateway ↔ synthetic HTML end-to-end.

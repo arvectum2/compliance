@@ -19,3 +19,11 @@ reports
 docs
 specs
 infra/launchd
+
+*.key
+*.pub
+*.token
+**/*.key
+**/*.pub
+**/*.token
+**/private-state/**

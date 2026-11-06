@@ -170,6 +170,63 @@ def serve_attested_fixture(fixture: str) -> int:
     return 0
 
 
+def serve_attested_verified() -> int:
+    """Real signed proof required by host: ONE root HTML GET, no crawler.
+
+    The gateway cannot fabricate the Ed25519 signing key or accept a target
+    hostname from argv. Host identity is bound in the signed lease.
+    """
+    if os.geteuid() != 65532 and os.environ.get("COMPLIANCE_UNIT_TEST") != "1":
+        raise RuntimeError("Gateway requires unprivileged service account")
+    try:
+        verifier = GatewayAttestor(_read_attested_public_key())
+        line = sys.stdin.buffer.readline(8193)
+        if not line or len(line) > 8192:
+            return 2
+        start = json.loads(line)
+        if not isinstance(start, dict) or set(start) != {"kind", "lease"}:
+            return 2
+        lease = SignedLease.parse(start["lease"])
+        gateway = AttestedGatewaySession(verifier, lease)
+        # One signed root HTML document only; no arbitrary URL argument.
+        root = f"https://{lease.hostname}/"
+        sys.stdout.write('{"kind":"ready"}\n')
+        sys.stdout.flush()
+        line = sys.stdin.buffer.readline(8193)
+        if not line or len(line) > 8192:
+            return 2
+        msg = json.loads(line)
+        if not isinstance(msg, dict) or set(msg) != {
+            "kind", "id", "url", "method", "resource_type", "permit",
+        } or (
+            msg["kind"] != "fetch"
+            or type(msg["id"]) is not int or msg["id"] != 1
+            or msg["method"] != "GET"
+            or msg["resource_type"] != "document"
+            or msg["url"] != root
+        ):
+            return 2
+        permit = SignedPermit.parse(msg["permit"])
+        response = gateway.get(
+            root, sequence=1, resource_type="document", permit=permit,
+        )
+        if response.status != 200 or not response.content_type.lower().startswith(
+            "text/html"
+        ):
+            return 2
+        sys.stdout.write(json.dumps({
+            "kind": "reply", "id": 1, "allowed": True,
+            "status": response.status,
+            "content_type": response.content_type[:128],
+            "body_b64": base64.b64encode(response.body).decode("ascii"),
+        }, separators=(",", ":")) + "\n")
+        sys.stdout.flush()
+        return 0
+    except (ValueError, TypeError, OSError, RuntimeError):
+        # No untrusted URL, SSL errors, secrets or response body in stderr.
+        return 2
+
+
 def _owned_document_only(message: object) -> bool:
     """Manual internal smoke sends exactly one safe document GET per phase."""
     return (
@@ -218,4 +275,6 @@ if __name__ == "__main__":
         raise SystemExit(serve("internal-owned"))
     if len(argv) == 2 and argv[0] == "attested-fixture" and argv[1] in FIXTURES:
         raise SystemExit(serve_attested_fixture(argv[1]))
+    if argv == ["attested-verified"]:
+        raise SystemExit(serve_attested_verified())
     raise SystemExit("Usage: egress_worker.py fixture <approved-name> | internal-owned")

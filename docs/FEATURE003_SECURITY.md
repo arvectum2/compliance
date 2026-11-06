@@ -86,3 +86,17 @@ hardcoded QA-only exception with synthetic proof.** It is not wired to
 `VerifiedScanService`, and cannot be exposed to external users. The
 secure transfer of real signed `gateway-v2` grants into a revocation-aware
 gateway remains an explicit release blocker.
+
+## EG-003b2c security progress (2026-11-06)
+
+- Persistent Ed25519 key pair with strict file modes, explicit enrollment
+  and refusal to regenerate silently.
+- SQLite verification provenance: `doh-quorum`, `offline-test`, `legacy`.
+  Only real dual-DoH verification unlocks `verified-root`.
+- One root HTML GET inside nftables, signed lease and short per-request
+  permit; HTML not retained, proof rechecked after the request.
+- A rare binary-key corruption bug was fixed: random HMAC key bytes are
+  now read without stripping whitespace. Regression uses a deterministic
+  key beginning with LF and ending in a space.
+- Local Python, JS, Docker and kernel acceptance passed. Real domain
+  TXT challenge remains absent; public SaaS stays NO-GO.

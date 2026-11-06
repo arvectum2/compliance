@@ -123,3 +123,13 @@ Python GatewaySession теперь выполняется внутри отде�
 Проверено на Docker и синтетических страницах. Подробности:
 [доверенные IPC и отзыв](docs/ATTESTED_GATEWAY.md). Публичные сканы
 по-прежнему отключены.
+
+
+### Verified-root security gate
+
+Добавлены `arvectum-compliance-admin attestor-init` и внутренний
+`verified-root`. Новый режим допускает один HTTPS GET главной
+страницы только по настоящему dual-DoH подтверждению домена,
+сохраняет приватный signing key вне контейнера и отвергает
+legacy/mock proofs. Это не публичный браузерный сканер.
+[Режим и инструкции](docs/VERIFIED_ROOT_GATE.md).

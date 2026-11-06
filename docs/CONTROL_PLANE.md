@@ -85,3 +85,19 @@ security review are the next release blockers.
 - Signed v2 gateway blocks suspicious static resources before transport.
 - CLI end-to-end with *injected fake DNS only in unit tests*, grant-file
   rights and no leaked bearer tokens.
+
+## Real-proof-gated root-only smoke (EG-003b2c)
+
+The operator can now initialize a persistent Ed25519 key identity
+(`attestor-init`) or inspect its public fingerprint (`attestor-info`).
+The `verified-root` command requires a tenant-scoped token, a still-current
+`doh-quorum` proof in the private DB and the short-lived signed v2 job.
+It derives the exact hostname from the proof and allows only GET of the
+root HTML. The gateway receives only the public key; the private key stays
+on host. It emits status/count/SHA-256, never the HTML body.
+
+All old proof records migrate as `legacy`, and proofs confirmed by a
+test-injected DNS callback are `offline-test`; both are explicitly denied
+in the live path. See [VERIFIED_ROOT_GATE.md](VERIFIED_ROOT_GATE.md).
+
+This is not a KMS-backed production service or public browser scanner.
