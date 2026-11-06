@@ -61,6 +61,8 @@ class AttestorIdentity:
     private: Ed25519PrivateKey
     public_path: Path
     public_fingerprint: str
+    state_dir: Path
+    generation: str = "legacy"
 
 
 def load_attestor_identity(state_dir: str | Path, *, initialize: bool = False) -> AttestorIdentity:
@@ -68,6 +70,15 @@ def load_attestor_identity(state_dir: str | Path, *, initialize: bool = False) -
     import hashlib
 
     root = _secure_state_directory(Path(state_dir))
+    from .attestor_rotation import active_generation, find_orphaned_generation
+
+    active = active_generation(root)
+    if active is not None:
+        if initialize:
+            raise ProofError("Key rotation identity exists; initialization refused")
+        return active
+    if find_orphaned_generation(root):
+        raise ProofError("Incomplete rotation detected; manual recovery required")
     private_path = root / _PRIVATE_NAME
     public_path = root / _PUBLIC_NAME
     if initialize:
@@ -92,4 +103,5 @@ def load_attestor_identity(state_dir: str | Path, *, initialize: bool = False) -
         private=private,
         public_path=public_path,
         public_fingerprint=hashlib.sha256(public).hexdigest(),
+        state_dir=root,
     )

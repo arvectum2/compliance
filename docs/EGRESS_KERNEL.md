@@ -56,3 +56,12 @@ The probe never publishes a port or runs a public website scanner.
 
 Base image pinned to nginx:stable-alpine@sha256:970364228b1e4f932abc22d321932816782cca8a20b85a77552a7cfe9acfb3b5;
 currently Alpine 3.24.2 in the tested ARM64 image.
+
+## Independent IPv6 kernel control (EG-006e)
+
+An additional disposable Docker probe opens a **real ::1:443** TCP
+listener. Without nft rules the direct IPv6 connection succeeds
+(negative-control exit 35); with the independently installed nft policy
+the socket attempt is denied, while UID 65532 and zero effective/bounding
+capabilities remain enforced. This tests IPv6 loopback, NOT full public
+IPv6 routing, NAT64, DNS64 or tunnelling. Those remain release blockers.

@@ -47,3 +47,12 @@
       sandbox and multi-tenant safety gates. BLOCKS PUBLIC LAUNCH.
 - [x] EG-008a Threat model, release gates and local rollback document.
 - [ ] EG-008b Production runbook, incident response and release approval.
+
+- [x] EG-003b2d1 Explicit Ed25519 key generation rotation with atomic
+      active manifest and exclusive lock; verified-root holds shared lock.
+- [x] EG-003b2d2 Verified crash recovery never promotes incomplete keys;
+      no active key means fail closed, and operation requires confirmation.
+- [x] EG-006e Independent IPv6 kernel loopback TCP:443 positive/negative
+      Docker controls; confirms denied under nftables.
+- [ ] EG-003b2d3 KMS/HSM, distributed locks, key backups, tenant revocation,
+      IPv6 public-routing/NAT64 bypass review. BLOCKS PUBLIC.

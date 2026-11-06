@@ -90,6 +90,14 @@ def _parser() -> argparse.ArgumentParser:
     revoke.add_argument("--proof-id", required=True)
     commands.add_parser("attestor-init", help="Initialize private Ed25519 signing identity")
     commands.add_parser("attestor-info", help="Show public signing-key fingerprint")
+    rotation = commands.add_parser(
+        "attestor-rotate", help="Offline key rotation; requires explicit acknowledgement",
+    )
+    rotation.add_argument("--confirm-rotation", action="store_true")
+    recover = commands.add_parser(
+        "attestor-recover", help="Explicitly clean abandoned rotation artifacts",
+    )
+    recover.add_argument("--confirm-recovery", action="store_true")
     smoke = commands.add_parser("verified-root", help="Single verified root HTTPS GET")
     smoke.add_argument("--token-file", type=Path, required=True)
     smoke.add_argument("--proof-id", required=True)
@@ -114,15 +122,33 @@ def main(argv: list[str] | None = None) -> int:
             _write_secret(token_path, token.encode("ascii"))
             print(json.dumps({"tenant": tenant, "token_file": str(token_path)}))
             return 0
-        if args.command in ("attestor-init", "attestor-info"):
+        if args.command in (
+            "attestor-init", "attestor-info", "attestor-rotate", "attestor-recover",
+        ):
             from .attestor_keys import load_attestor_identity
-
-            identity = load_attestor_identity(
-                root, initialize=args.command == "attestor-init",
+            from .attestor_rotation import (
+                recover_attestor_state,
+                rotate_attestor_identity,
             )
+
+            recovered = 0
+            if args.command == "attestor-recover":
+                if not args.confirm_recovery:
+                    raise ProofError("Explicit recovery acknowledgement required")
+                identity, recovered = recover_attestor_state(root)
+            elif args.command == "attestor-rotate":
+                if not args.confirm_rotation:
+                    raise ProofError("Explicit rotation acknowledgement required")
+                identity = rotate_attestor_identity(root)
+            else:
+                identity = load_attestor_identity(
+                    root, initialize=args.command == "attestor-init",
+                )
             print(json.dumps({
                 "public_fingerprint": identity.public_fingerprint,
                 "public_key_file": str(identity.public_path),
+                "generation": identity.generation,
+                "cleaned_orphan_files": recovered,
             }, sort_keys=True))
             return 0
         token = _read_secret(args.token_file).decode("ascii")

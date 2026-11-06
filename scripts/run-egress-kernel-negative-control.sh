@@ -4,8 +4,9 @@
 set -euo pipefail
 image='arvectum/compliance-egress-probe:eg003-lite'
 case "$*" in
-  "") skip_loopback=0 ;;
-  "--bridge") skip_loopback=1 ;;
+  "") skip_loopback=0; probe=firewall_probe.sh ;;
+  "--bridge") skip_loopback=1; probe=firewall_probe.sh ;;
+  "--ipv6") skip_loopback=1; probe=firewall_probe_ipv6.sh ;;
   *) exit 2 ;;
 esac
 exec docker run --rm --network bridge --dns 1.1.1.1 \
@@ -18,4 +19,4 @@ exec docker run --rm --network bridge --dns 1.1.1.1 \
   --entrypoint /bin/setpriv "$image" \
   --reuid 65532 --regid 65532 --clear-groups \
   --bounding-set=-all --inh-caps=-all --ambient-caps=-all \
-  /bin/sh /opt/compliance/firewall_probe.sh
+  /bin/sh /opt/compliance/"$probe"

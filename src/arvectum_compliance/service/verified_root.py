@@ -19,6 +19,7 @@ from arvectum_compliance.adapters.isolated_bridge import _BoundedLines, _stop
 
 from .attested_ipc import HostAttestor
 from .attestor_keys import AttestorIdentity
+from .attestor_rotation import attestor_scan_guard
 from .domain_proof import ProofError
 from .verified_jobs import VerifiedScanService
 
@@ -27,6 +28,24 @@ MAX_REPLY = 1_600_000
 
 
 def run_verified_root(
+    service: VerifiedScanService,
+    identity: AttestorIdentity,
+    token: str,
+    proof_id: str,
+    job_id: str,
+    *,
+    timeout_seconds: int = 45,
+    runner: Path | None = None,
+) -> dict[str, object]:
+    """Run with a shared lock preventing concurrent local key rotation."""
+    with attestor_scan_guard(identity):
+        return _run_verified_root_locked(
+            service, identity, token, proof_id, job_id,
+            timeout_seconds=timeout_seconds, runner=runner,
+        )
+
+
+def _run_verified_root_locked(
     service: VerifiedScanService,
     identity: AttestorIdentity,
     token: str,

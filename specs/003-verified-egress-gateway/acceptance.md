@@ -102,3 +102,15 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
   actual Docker negative E2E checks forged lease and missing key.
 - Production DoH challenge for arvectum.com is NOT published; thus no
   newly verified live root request was executed.
+
+## EG-003b2d — local signing key lifecycle and IPv6 kernel proof
+
+- Persistent Ed25519 rotation writes new generation before atomically
+  updating active manifest; no silent fallback on an incomplete rotation.
+- Read-only shared lock protects a complete verified-root job. Nonblocking
+  exclusive rotation fails during a job; stale identity fails before Docker.
+- Explicit recovery requires a valid trusted active identity and removes
+  only recognized abandoned artifacts, never promoting orphan keys.
+- Independent direct IPv6 TCP ::1:443 test with no nftables reaches
+  listener; same test with installed policy denies socket.
+- Full external IPv6/NAT64 and distributed KMS key lifecycle NOT approved.

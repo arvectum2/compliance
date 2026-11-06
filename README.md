@@ -133,3 +133,14 @@ Python GatewaySession теперь выполняется внутри отде�
 сохраняет приватный signing key вне контейнера и отвергает
 legacy/mock proofs. Это не публичный браузерный сканер.
 [Режим и инструкции](docs/VERIFIED_ROOT_GATE.md).
+
+### Key rotation and IPv6 security regression
+
+Для приватного оператора доступны `attestor-rotate --confirm-rotation`
+и `attestor-recover --confirm-recovery`. Ротация локальная, атомарная,
+не допускается во время запущенного verified-root. Прерывание до
+активации нового поколения требует подтверждённого восстановления.
+[Инструкция](docs/ATTESTOR_ROTATION.md).
+
+Kernel firewall E2E теперь включает положительный/отрицательный
+IPv6 loopback TCP:443 контроль. Публичное сканирование не включено.

@@ -7,7 +7,8 @@ RUN apk add --no-cache nftables util-linux \
 COPY nftables.nft /etc/compliance-egress.nft
 COPY entrypoint.sh /usr/local/bin/compliance-egress-start
 COPY firewall_probe.sh /opt/compliance/firewall_probe.sh
-RUN chmod 0555 /usr/local/bin/compliance-egress-start /opt/compliance/firewall_probe.sh \
+COPY firewall_probe_ipv6.sh /opt/compliance/firewall_probe_ipv6.sh
+RUN chmod 0555 /usr/local/bin/compliance-egress-start /opt/compliance/firewall_probe.sh /opt/compliance/firewall_probe_ipv6.sh \
  && chmod 0444 /etc/compliance-egress.nft
 ENTRYPOINT ["/usr/local/bin/compliance-egress-start"]
 CMD ["/bin/sh", "/opt/compliance/firewall_probe.sh"]

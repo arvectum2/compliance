@@ -50,3 +50,23 @@ def test_negative_controls_prove_firewall_changes_kernel_behavior(
     )
     assert result.returncode == exit_code
     assert message in result.stderr
+
+
+def test_ipv6_loopback_is_blocked_by_kernel_not_app_code():
+    protected = subprocess.run(
+        [str(ROOT / "scripts/run-egress-kernel-ipv6.sh")],
+        capture_output=True, text=True, timeout=35, check=True,
+    )
+    assert "FIREWALL_APPLIED" in protected.stdout.splitlines()
+    assert json.loads(protected.stdout.splitlines()[-1]) == {
+        "ipv6_loopback": "unreachable", "uid": 65532, "caps_zero": True,
+    }
+
+
+def test_ipv6_negative_control_connects_without_firewall():
+    control = subprocess.run(
+        [str(ROOT / "scripts/run-egress-kernel-negative-control.sh"), "--ipv6"],
+        capture_output=True, text=True, timeout=35,
+    )
+    assert control.returncode == 35
+    assert "IPV6_LOOPBACK_443_REACHABLE" in control.stderr

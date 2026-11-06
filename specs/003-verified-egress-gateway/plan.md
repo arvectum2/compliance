@@ -102,3 +102,11 @@ and docs/FEATURE003_SECURITY.md. Production EG-003 firewall remains NO-GO.
   only public Ed25519 key, signed lease and one root document permit.
 - Return only status, bytes and SHA-256, with post-fetch revocation check.
 - Full browser SaaS, real DNS enrollment and KMS require separate gates.
+
+## EG-003b2d — signing lifecycle and IPv6 control
+
+Versioned local signing keys, atomic active marker, shared/exclusive
+fcntl locks, explicit operator-approved crash recovery. The scope is
+a single trusted machine. Add an independent kernel IPv6 loopback probe,
+with reachable negative control and blocked protected case. Next
+phase is independent public-IPv6/DNS audit and KMS-based orchestration.
