@@ -34,21 +34,28 @@ jobs:
           ASKPASS
           chmod 700 "$RUNNER_TEMP/compliance-gitverse-askpass.sh"
           export GIT_ASKPASS="$RUNNER_TEMP/compliance-gitverse-askpass.sh"
-          git clone --mirror "https://github.com/${GITHUB_REPOSITORY}.git" repository.git
+          timeout --signal=TERM --kill-after=5s 90s \
+            git clone --mirror "https://github.com/${GITHUB_REPOSITORY}.git" repository.git
           cd repository.git
           git remote add gitverse https://gitverse.ru/arvectum/compliance.git
-          for attempt in 1 2 3 4 5; do
-            if git push --force --prune gitverse \
+          gh_sha="$(git rev-parse refs/heads/main)"
+          for attempt in 1 2 3 4; do
+            if timeout --signal=TERM --kill-after=5s 90s \
+              git -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 \
+              push --force --prune gitverse \
               'refs/heads/*:refs/heads/*' \
               'refs/tags/*:refs/tags/*' > "$RUNNER_TEMP/compliance-mirror.log" 2>&1; then
-              gh_sha="$(git rev-parse refs/heads/main)"
-              gv_sha="$(git ls-remote gitverse refs/heads/main | cut -f1)"
-              test "$gh_sha" = "$gv_sha" || { echo "::error::Mirror SHA mismatch"; exit 1; }
-              echo "Mirrored main: $gv_sha" >> "$GITHUB_STEP_SUMMARY"
-              exit 0
+              if gv_sha="$(timeout --signal=TERM --kill-after=5s 25s \
+                git ls-remote gitverse refs/heads/main | cut -f1)" \
+                && test "$gh_sha" = "$gv_sha"; then
+                echo "Mirrored main: $gv_sha" >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              echo "::warning::GitVerse SHA verification delayed (attempt $attempt/4)"
+            else
+              echo "::warning::GitVerse push failed or timed out (attempt $attempt/4)"
             fi
-            echo "::warning::GitVerse push failed (attempt $attempt/5)"
-            if test "$attempt" -lt 5; then sleep 10; fi
+            if test "$attempt" -lt 4; then sleep 10; fi
           done
-          echo "::error::GitVerse push failed after five attempts"
+          echo "::error::GitVerse mirroring did not verify after bounded retries"
           exit 1
