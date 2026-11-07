@@ -242,3 +242,33 @@ def test_queue_limit_enforced_per_tenant(tmp_path):
         ledger.enqueue(new_grant(issuer, proof, "job_overflow"),
                        issuer=issuer, proofs=proofs, now=NOW + 3)
     assert ledger.status("org_A", "job_0")[0] == "queued"
+
+
+def test_claim_proof_substitution_cannot_bypass_revocation(tmp_path):
+    """A worker can edit Claim fields, but cannot rewrite durable ownership."""
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    other_pending = proofs.issue("org_A", "second.example.com", now=NOW)
+    other = proofs.confirm(
+        "org_A", other_pending.id, lambda _: [other_pending.record_value],
+        verification_method="doh-quorum", now=NOW + 1,
+    )
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    proofs.revoke("org_A", proof.id)
+    for altered in (
+        replace(claim, proof=other.id),
+        replace(claim, hostname="second.example.com", proof=other.id),
+    ):
+        with pytest.raises(ProofError, match="does not match"):
+            ledger.finish(
+                altered, worker="worker_1", state="completed",
+                proofs=proofs, bytes_count=4, sha256="b" * 64, now=NOW + 5,
+            )
+    assert ledger.status("org_A", "job_1")[0] == "running"
+    with pytest.raises(ProofError, match="Real DNS"):
+        ledger.finish(
+            claim, worker="worker_1", state="completed", proofs=proofs,
+            bytes_count=4, sha256="b" * 64, now=NOW + 5,
+        )
+    assert ledger.status("org_A", "job_1")[0] == "denied"

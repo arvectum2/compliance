@@ -20,7 +20,10 @@ may be enqueued; test/legacy DNS proofs are rejected. The tenant-scoped
 - Recheck proof before claim; revoked/expired proof causes `denied`
   without handing a job to a worker. Lease expires in at most 30 seconds
   and never auto-retries.
-- Only the exact worker + valid lease may finish. Completed results
+- Only the exact worker + valid lease may finish. The worker-supplied
+  claim hostname and proof must match the durable row; revocation
+  cannot be bypassed by substituting another verified proof ID.
+  Completed results
   include an integer byte count <=1MB and a SHA-256 digest, not page
   content. Failed/denied jobs store no response data. An attempt to
   complete after proof revocation transitions to `denied` and raises.
@@ -53,5 +56,6 @@ arvectum.com TXT record is created or asserted.
 
 Checks cover idempotency, signed-grant tampering, fake DNS rejection,
 tenant isolation, concurrent claim winner, stale leases, revoked DNS
-before and during a job, no token/HTML retention, restrictive file
+before and during a job, forged claim proof/hostname substitution,
+no token/HTML retention, restrictive file
 permissions, bounded tenant queue and retention cleanup.

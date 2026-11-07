@@ -182,19 +182,34 @@ class JobLedger:
                 raise ValueError("Only bounded byte count and SHA accepted")
         elif bytes_count is not None or sha256 is not None:
             raise ValueError("Failure cannot retain response metadata")
-        # No completed report may be accepted after known domain revocation.
+        # The caller-supplied Claim is not trusted for ownership decisions:
+        # bind the lease to the durable job's hostname and proof, not fields
+        # that a worker can replace while retaining a valid lease token.
         revoked = False
-        if state == "completed":
-            try:
-                proofs.require_dns_verified(claim.tenant, claim.proof, now=t)
-            except ProofError:
-                revoked = True
-                state = "denied"
-                bytes_count = None
-                sha256 = None
         with self._db() as db:
             db.execute("BEGIN IMMEDIATE")
             self._expire(db, t)
+            row = db.execute(
+                "SELECT hostname,proof FROM jobs WHERE tenant=? AND job=? "
+                "AND worker=? AND state='running' AND lease_digest=? "
+                "AND lease_expires>? AND expires>?",
+                (claim.tenant, claim.job, worker,
+                 hashlib.sha256(claim.token.encode()).hexdigest(), t, t),
+            ).fetchone()
+            if row is None:
+                db.execute("COMMIT")
+                raise ProofError("Expired or unauthorized worker lease")
+            if row != (claim.hostname, claim.proof):
+                db.execute("COMMIT")
+                raise ProofError("Worker claim does not match durable job")
+            if state == "completed":
+                try:
+                    proofs.require_dns_verified(claim.tenant, row[1], now=t)
+                except ProofError:
+                    revoked = True
+                    state = "denied"
+                    bytes_count = None
+                    sha256 = None
             changed = db.execute(
                 "UPDATE jobs SET state=?,bytes_count=?,sha256=?,updated=?,"
                 "lease_digest=NULL,lease_expires=NULL WHERE tenant=? "

@@ -15,6 +15,8 @@
       enrollment, single-winner claim and SHA-only terminal results.
 - [x] EG-002b2 Bounded tenant queue, atomic lease expiry, sanitized state
       events and 1–90-day retention, offline concurrency/revocation tests.
+- [x] EG-002b2a Fail-closed durable proof/hostname binding at worker finish;
+      prevent altered claim fields bypassing a revoked domain (offline).
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
       identity, cross-DB revocation and audited telemetry. BLOCKS PUBLIC.
 - [x] EG-003a Temporary Linux gateway namespace with nftables output policy,

@@ -114,3 +114,11 @@ EG-005b, EG-006c, EG-007 and EG-008b. No automatic pass for unrun tests.
 - Independent direct IPv6 TCP ::1:443 test with no nftables reaches
   listener; same test with installed policy denies socket.
 - Full external IPv6/NAT64 and distributed KMS key lifecycle NOT approved.
+
+
+## EG-002b2a — durable worker-claim binding
+The completion path compares both claimed hostname and proof ID with
+the persisted job row under the lease transaction. A worker holding a
+legitimate lease cannot substitute a different valid proof to evade
+revocation. Negative offline regression required; distributed atomic
+revocation remains a PUBLIC NO-GO.
