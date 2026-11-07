@@ -462,3 +462,58 @@ def test_single_snapshot_proof_method_and_revocation_gate(tmp_path):
         proofs.require_dns_verified_host(
             "org_A", proof.id, "example.com", now=NOW + 4,
         )
+
+
+def test_expiry_sweep_is_bounded_and_repeatable(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(9):
+        ledger.enqueue(
+            new_grant(issuer, proof, f"batch_{index}"),
+            issuer=issuer, proofs=proofs, now=NOW + 3,
+        )
+    assert ledger.expire_batch(now=NOW + 5000, limit=3) == 3
+    assert ledger.expire_batch(now=NOW + 5000, limit=3) == 3
+    assert ledger.expire_batch(now=NOW + 5000, limit=3) == 3
+    assert ledger.expire_batch(now=NOW + 5000, limit=3) == 0
+    assert all(ledger.status("org_A", f"batch_{i}")[0] == "expired"
+               for i in range(9))
+    assert all(len(ledger.events("org_A", f"batch_{i}")) == 2
+               for i in range(9))
+    with pytest.raises(ValueError):
+        ledger.expire_batch(limit=0)
+
+
+def test_stale_unmaterialized_jobs_do_not_consume_active_tenant_quota(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(100):
+        ledger.enqueue(
+            new_grant(issuer, proof, f"stale_{index}"),
+            issuer=issuer, proofs=proofs, now=NOW + 3,
+        )
+    # Simulate the old entries remaining in SQLite after bounded maintenance.
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET expires=? WHERE tenant='org_A'",
+            (NOW + 4,),
+        )
+    ledger.enqueue(
+        new_grant(issuer, proof, "new_after_stale"),
+        issuer=issuer, proofs=proofs, now=NOW + 5,
+    )
+    assert ledger.status("org_A", "new_after_stale")[0] == "queued"
+
+
+def test_expired_running_job_never_reconciled_as_active(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(
+        new_grant(issuer, proof), issuer=issuer, proofs=proofs, now=NOW + 3,
+    )
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    assert claim is not None
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET lease_expires=? WHERE tenant=? AND job=?",
+            (NOW + 4, claim.tenant, claim.job),
+        )
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 5) == 0
+    assert ledger.status("org_A", "job_1")[0] == "expired"

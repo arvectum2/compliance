@@ -64,13 +64,18 @@ class JobLedger:
         return db
 
     @staticmethod
-    def _expire(db: sqlite3.Connection, t: int) -> None:
+    def _expire(
+        db: sqlite3.Connection, t: int, *, limit: int = 500,
+    ) -> int:
+        """Bound maintenance work; callers independently filter expired jobs."""
+        if type(limit) is not int or not 1 <= limit <= 1000:
+            raise ValueError("Invalid expiry batch size")
         expired = db.execute(
             "SELECT tenant,job FROM jobs WHERE "
             "(state='queued' AND expires<=?) OR "
             "(state='running' AND (lease_expires<=? OR expires<=?))",
             (t, t, t),
-        ).fetchall()
+        ).fetchmany(limit)
         for tenant, job in expired:
             db.execute(
                 "UPDATE jobs SET state='expired',updated=?,lease_digest=NULL,"
@@ -79,6 +84,18 @@ class JobLedger:
             db.execute(
                 "INSERT INTO events VALUES (?,?,?,?)", (tenant, job, t, "expired"),
             )
+        return len(expired)
+
+    def expire_batch(
+        self, *, now: int | None = None, limit: int = 500,
+    ) -> int:
+        """Explicit bounded expiry sweep for an internal maintenance loop."""
+        t = int(time.time()) if now is None else int(now)
+        with self._db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            changed = self._expire(db, t, limit=limit)
+            db.execute("COMMIT")
+        return changed
 
     def enqueue(
         self, grant: ScanGrant, *, issuer: GrantIssuer,
@@ -107,8 +124,9 @@ class JobLedger:
             else:
                 count = db.execute(
                     "SELECT count(*) FROM jobs WHERE tenant=? "
-                    "AND state IN ('queued','running')",
-                    (grant.tenant_id,),
+                    "AND ((state='queued' AND expires>?) "
+                    "OR (state='running' AND expires>? AND lease_expires>?))",
+                    (grant.tenant_id, t, t, t),
                 ).fetchone()[0]
                 if count >= 100:
                     raise ProofError("Tenant job queue full")
@@ -265,24 +283,27 @@ class JobLedger:
             if cursor is None:
                 rows = db.execute(
                     "SELECT created,tenant,job,proof,hostname FROM jobs "
-                    "WHERE state IN ('queued','running') "
-                    "ORDER BY created,tenant,job LIMIT ?", (limit,),
+                    "WHERE ((state='queued' AND expires>?) "
+                    "OR (state='running' AND expires>? AND lease_expires>?)) "
+                    "ORDER BY created,tenant,job LIMIT ?", (t, t, t, limit),
                 ).fetchall()
             else:
                 rows = db.execute(
                     "SELECT created,tenant,job,proof,hostname FROM jobs "
-                    "WHERE state IN ('queued','running') "
+                    "WHERE ((state='queued' AND expires>?) "
+                    "OR (state='running' AND expires>? AND lease_expires>?)) "
                     "AND (created,tenant,job)>(?,?,?) "
                     "ORDER BY created,tenant,job LIMIT ?",
-                    (*cursor, limit),
+                    (t, t, t, *cursor, limit),
                 ).fetchall()
                 if len(rows) < limit:
                     rows += db.execute(
                         "SELECT created,tenant,job,proof,hostname FROM jobs "
-                        "WHERE state IN ('queued','running') "
+                        "WHERE ((state='queued' AND expires>?) "
+                        "OR (state='running' AND expires>? AND lease_expires>?)) "
                         "AND (created,tenant,job)<=(?,?,?) "
                         "ORDER BY created,tenant,job LIMIT ?",
-                        (*cursor, limit - len(rows)),
+                        (t, t, t, *cursor, limit - len(rows)),
                     ).fetchall()
             if rows:
                 last = rows[-1][:3]

@@ -105,3 +105,16 @@ atomicity across the independent proof and job databases. A revoke
 committed after this read may still race with an in-flight lease:
 **production release remains blocked** pending a shared transactional
 revocation barrier and authenticated worker implementation.
+
+### EG-002b3b2a — bounded expiry maintenance
+
+`expire_batch(now=..., limit=500)` materializes at most 500 expired
+queued/running jobs per call and records one sanitized transition per
+job. Repeated calls drain the backlog without duplicate events. All
+claim, finish, queue-quota and revocation paths independently exclude
+time-expired grants/leases even when old rows have not yet been
+materialized. This prevents an unbounded transaction on the critical
+path when a backlog has accumulated. It does **not** create cross-DB
+atomic revocation, independently authenticated workers or a production
+distributed queue. A deployment must run a trusted maintenance loop
+and separately review expiry-event retention and operational load.

@@ -157,3 +157,12 @@ revocation remains a PUBLIC NO-GO.
   tenant, invalid provenance and revoked proof.
 - No claim of atomicity across proof and job databases; distributed
   revocation barrier and independent worker identity remain PUBLIC NO-GO.
+
+## EG-002b3b2a — bounded local expiry
+- Internal maintenance `expire_batch` touches no more than 1–1000
+  expired rows per call; repeated calls drain the backlog without
+  duplicate state events.
+- Expired but not yet materialized jobs never count against the active
+  tenant quota or participate in revocation reconciliation.
+- Expired leases cannot finish; this does not solve cross-store
+  revocation atomicity or production worker identity. PUBLIC NO-GO.

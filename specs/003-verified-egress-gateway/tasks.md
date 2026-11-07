@@ -25,6 +25,8 @@
       and reconciliation, with corrupt-ledger fail-closed tests.
 - [x] EG-002b3b1b Single-snapshot durable DNS proof/hostname/method gate
       at enqueue, claim, finish and reconciliation; offline regression.
+- [x] EG-002b3b2a Bounded lease-expiry maintenance, active-quota
+      filtering and offline backlog regression; not distributed.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
