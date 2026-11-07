@@ -272,3 +272,52 @@ def test_claim_proof_substitution_cannot_bypass_revocation(tmp_path):
             bytes_count=4, sha256="b" * 64, now=NOW + 5,
         )
     assert ledger.status("org_A", "job_1")[0] == "denied"
+
+
+def test_reconcile_revocation_cancels_active_lease(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    proofs.revoke("org_A", proof.id)
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 5) == 1
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 6) == 0
+    assert ledger.status("org_A", "job_1") == ("denied", None, None)
+    with pytest.raises(ProofError):
+        ledger.finish(
+            claim, worker="worker_1", state="completed", proofs=proofs,
+            bytes_count=1, sha256="a" * 64, now=NOW + 7,
+        )
+    assert [state for _, state in ledger.events("org_A", "job_1")] == [
+        "queued", "running", "denied",
+    ]
+
+
+def test_reconcile_revocation_cancels_queued_job(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    proofs.revoke("org_A", proof.id)
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4) == 1
+    assert ledger.claim("worker_1", proofs=proofs, now=NOW + 5) is None
+    assert ledger.status("org_A", "job_1")[0] == "denied"
+
+
+def test_reconcile_retains_healthy_jobs_and_bounds_batch(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(3):
+        ledger.enqueue(
+            new_grant(issuer, proof, f"job_{index}"),
+            issuer=issuer, proofs=proofs, now=NOW + 3,
+        )
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4) == 0
+    with pytest.raises(ValueError):
+        ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=0)
+    with pytest.raises(ValueError):
+        ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=True)
+    proofs.revoke("org_A", proof.id)
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 5, limit=2) == 2
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 6, limit=2) == 1
+    assert all(
+        ledger.status("org_A", f"job_{i}")[0] == "denied" for i in range(3)
+    )

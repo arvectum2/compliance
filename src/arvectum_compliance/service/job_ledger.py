@@ -230,6 +230,48 @@ class JobLedger:
         if revoked:
             raise ProofError("Real DNS ownership proof required")
 
+    def reconcile_revocations(
+        self, *, proofs: SqliteOwnershipRegistry,
+        now: int | None = None, limit: int = 100,
+    ) -> int:
+        """Fail closed for locally observed revoked/expired DNS proofs.
+
+        Internal maintenance only. This is not a distributed atomic
+        revocation barrier; workers must still recheck before egress.
+        """
+        if type(limit) is not int or not 1 <= limit <= 1000:
+            raise ValueError("Invalid reconciliation batch size")
+        t = int(time.time()) if now is None else int(now)
+        denied = 0
+        with self._db() as db:
+            db.execute("BEGIN IMMEDIATE")
+            self._expire(db, t)
+            # Bound cross-store checks; healthy rows must not starve
+            # later revoked rows. Caller can pass multiple batches via
+            # an explicit cursor in a future distributed implementation.
+            rows = db.execute(
+                "SELECT tenant,job,proof FROM jobs "
+                "WHERE state IN ('queued','running') "
+                "ORDER BY created,tenant,job LIMIT ?", (limit,),
+            ).fetchall()
+            for tenant, job, proof in rows:
+                try:
+                    proofs.require_dns_verified(tenant, proof, now=t)
+                except ProofError:
+                    db.execute(
+                        "UPDATE jobs SET state='denied',updated=?,"
+                        "lease_digest=NULL,lease_expires=NULL "
+                        "WHERE tenant=? AND job=? AND state IN ('queued','running')",
+                        (t, tenant, job),
+                    )
+                    db.execute(
+                        "INSERT INTO events VALUES (?,?,?,?)",
+                        (tenant, job, t, "denied"),
+                    )
+                    denied += 1
+            db.execute("COMMIT")
+        return denied
+
     def status(self, tenant: str, job: str) -> tuple[str, int | None, str | None]:
         tenant, job = _identifier(tenant), _identifier(job)
         with self._db() as db:

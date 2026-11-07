@@ -17,6 +17,10 @@
       events and 1–90-day retention, offline concurrency/revocation tests.
 - [x] EG-002b2a Fail-closed durable proof/hostname binding at worker finish;
       prevent altered claim fields bypassing a revoked domain (offline).
+- [x] EG-002b3a Internal offline revocation reconciliation for queued
+      and running leases, sanitized events and bounded batch tests.
+- [ ] EG-002b3b Cursor-based fair reconciliation, cross-store atomicity
+      and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
       identity, cross-DB revocation and audited telemetry. BLOCKS PUBLIC.
 - [x] EG-003a Temporary Linux gateway namespace with nftables output policy,

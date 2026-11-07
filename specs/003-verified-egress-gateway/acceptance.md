@@ -122,3 +122,11 @@ the persisted job row under the lease transaction. A worker holding a
 legitimate lease cannot substitute a different valid proof to evade
 revocation. Negative offline regression required; distributed atomic
 revocation remains a PUBLIC NO-GO.
+
+## EG-002b3a — offline revocation sweep
+- Trusted maintenance sweep denies revoked queued/running jobs and
+  invalidates worker lease without storing content or raw tokens.
+- Repeat is idempotent; tests cover stale worker rejection and bounded
+  batches. No real DNS record or public scan is used.
+- Healthy-prefix starvation, cross-database race and distributed
+  revocation are explicit PUBLIC NO-GO limitations.

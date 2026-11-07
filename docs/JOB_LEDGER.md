@@ -59,3 +59,21 @@ tenant isolation, concurrent claim winner, stale leases, revoked DNS
 before and during a job, forged claim proof/hostname substitution,
 no token/HTML retention, restrictive file
 permissions, bounded tenant queue and retention cleanup.
+
+## EG-002b3a — offline revocation reconciliation
+
+`reconcile_revocations(proofs=..., now=..., limit=100)` is a trusted,
+explicit maintenance operation. It checks up to 1000 active queue rows
+against the persisted DNS ownership registry, transitions invalid queued
+or running jobs to `denied`, clears their lease digests, and writes only
+a sanitized state event. Repeated sweeps are idempotent; stale workers
+cannot complete a cancelled lease. This does **not** call DNS itself,
+publish a job, or start a scanner.
+
+Limitations: the bounded sweep always starts at the oldest active job;
+a large healthy prefix can starve later revoked jobs. Use this only for
+small single-host queues until cursor-based pagination is implemented.
+Cross-SQLite transactions are not atomic; proof revocation can race
+between check and update. Production workers must recheck proof and
+authorization immediately before every network request; a distributed
+revocation barrier and independent audit remain PUBLIC NO-GO.
