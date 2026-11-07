@@ -145,3 +145,13 @@ production worker остаются NO-GO.
 Добавлены offline-тесты повторных партий, квоты и просроченного
 running-задания. Межбазовая атомарность, distributed barrier и
 production worker остаются PUBLIC NO-GO.
+
+
+## EG-002b3b2b — bounded claim-time revocation
+
+Устранён неограниченный цикл при выдаче задания: если перед здоровым
+заданием находится большой FIFO-префикс с отозванным DNS proof, один
+вызов `claim` отклоняет не более 100 записей (лимит 1–1000) и
+возвращает None. Следующий вызов продолжает работу, события не
+дублируются. Проверено offline; cross-store atomicity и
+distributed worker identity остаются PUBLIC NO-GO.

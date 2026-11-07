@@ -27,6 +27,8 @@
       at enqueue, claim, finish and reconciliation; offline regression.
 - [x] EG-002b3b2a Bounded lease-expiry maintenance, active-quota
       filtering and offline backlog regression; not distributed.
+- [x] EG-002b3b2b Bound claim-time revoked FIFO prefix to 100 denials
+      per call; subsequent claims resume safely (offline).
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

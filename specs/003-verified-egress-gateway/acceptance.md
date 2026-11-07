@@ -166,3 +166,14 @@ revocation remains a PUBLIC NO-GO.
   tenant quota or participate in revocation reconciliation.
 - Expired leases cannot finish; this does not solve cross-store
   revocation atomicity or production worker identity. PUBLIC NO-GO.
+
+
+## EG-002b3b2b — bounded revoked FIFO prefix (offline)
+
+- A single claim may deny at most `rejection_limit` invalid-proof queued
+  jobs (default 100, allowed 1–1000); returns None when exhausted.
+- Invalid limit is rejected before mutation. A subsequent claim resumes
+  from remaining queued jobs; no duplicate terminal events.
+- Valid claims remain single-winner and require live proof recheck.
+- This does not solve cross-store atomic revocation or distributed worker
+  identity; PUBLIC NO-GO.

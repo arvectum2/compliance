@@ -144,20 +144,30 @@ class JobLedger:
 
     def claim(
         self, worker: str, *, proofs: SqliteOwnershipRegistry,
-        now: int | None = None,
+        now: int | None = None, rejection_limit: int = 100,
     ) -> Claim | None:
+        """Claim at most one valid job after bounded invalid-proof denials.
+
+        A revoked FIFO prefix must not hold a SQLite write lock without
+        limit. Callers can retry after a None result to drain the backlog.
+        """
         worker = _identifier(worker)
+        if type(rejection_limit) is not int or not 1 <= rejection_limit <= 1000:
+            raise ValueError("Invalid claim rejection limit")
         t = int(time.time()) if now is None else int(now)
         with self._db() as db:
             db.execute("BEGIN IMMEDIATE")
             self._expire(db, t)
-            while True:
+            for _ in range(rejection_limit + 1):
                 row = db.execute(
                     "SELECT tenant,job,hostname,proof,expires FROM jobs "
                     "WHERE state='queued' AND expires>? "
                     "ORDER BY created,tenant,job LIMIT 1", (t,),
                 ).fetchone()
                 if not row:
+                    db.execute("COMMIT")
+                    return None
+                if _ == rejection_limit:
                     db.execute("COMMIT")
                     return None
                 tenant, job, hostname, proof, expiry = row
@@ -176,6 +186,9 @@ class JobLedger:
                     )
                     continue
                 break
+            else:
+                db.execute("COMMIT")
+                return None
             token = secrets.token_urlsafe(32)
             db.execute(
                 "UPDATE jobs SET state='running',worker=?,lease_digest=?,"

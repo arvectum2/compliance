@@ -14,6 +14,9 @@ may be enqueued; test/legacy DNS proofs are rejected. The tenant-scoped
 
 - Maximum 100 active jobs per tenant. Repeating the same signed grant
   is idempotent. Reusing an ID with another grant is refused.
+- Worker `claim` checks at most 100 invalid-proof queued jobs per call
+  (configurable 1–1000) and returns None if that budget is exhausted.
+  Repeated calls resume without duplicate events, bounding lock duration.
 - Worker `claim` holds a SQLite `BEGIN IMMEDIATE` transaction, marks
   one FIFO job running, and returns a fresh 256-bit lease capability.
   Only its SHA-256 digest is stored.

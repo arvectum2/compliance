@@ -517,3 +517,38 @@ def test_expired_running_job_never_reconciled_as_active(tmp_path):
         )
     assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 5) == 0
     assert ledger.status("org_A", "job_1")[0] == "expired"
+
+
+def test_claim_revoked_fifo_prefix_is_bounded_and_resumable(tmp_path):
+    proofs, revoked_proof, issuer, ledger = provision(tmp_path)
+    for i in range(8):
+        ledger.enqueue(
+            new_grant(issuer, revoked_proof, f"revoked_{i:02}"),
+            issuer=issuer, proofs=proofs, now=NOW + 3,
+        )
+    pending = proofs.issue("org_A", "healthy.example.com", now=NOW)
+    healthy_proof = proofs.confirm(
+        "org_A", pending.id, lambda _: [pending.record_value],
+        verification_method="doh-quorum", now=NOW + 1,
+    )
+    ledger.enqueue(
+        new_grant(issuer, healthy_proof, "z_healthy"),
+        issuer=issuer, proofs=proofs, now=NOW + 3,
+    )
+    proofs.revoke("org_A", revoked_proof.id)
+    with pytest.raises(ValueError):
+        ledger.claim("worker_1", proofs=proofs, now=NOW + 4,
+                     rejection_limit=0)
+    assert ledger.claim("worker_1", proofs=proofs, now=NOW + 4,
+                        rejection_limit=3) is None
+    assert [ledger.status("org_A", f"revoked_{i:02}")[0]
+            for i in range(8)] == ["denied"] * 3 + ["queued"] * 5
+    assert ledger.claim("worker_1", proofs=proofs, now=NOW + 5,
+                        rejection_limit=3) is None
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 6,
+                         rejection_limit=3)
+    assert claim is not None and claim.job == "z_healthy"
+    assert all(ledger.status("org_A", f"revoked_{i:02}")[0] == "denied"
+               for i in range(8))
+    assert all(len(ledger.events("org_A", f"revoked_{i:02}")) == 2
+               for i in range(8))
