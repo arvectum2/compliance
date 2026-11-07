@@ -130,3 +130,11 @@ revocation remains a PUBLIC NO-GO.
   batches. No real DNS record or public scan is used.
 - Healthy-prefix starvation, cross-database race and distributed
   revocation are explicit PUBLIC NO-GO limitations.
+
+
+## EG-002b3b1 — fair cursor
+- Bounded sweep visits active jobs beyond a healthy prefix.
+- Cursor persists across reopening the ledger and wraps after the tail.
+- State transitions remain idempotent and tenant-scoped.
+- Cross-store revocation atomicity, audited worker identity and
+  distributed barriers are still PUBLIC NO-GO.

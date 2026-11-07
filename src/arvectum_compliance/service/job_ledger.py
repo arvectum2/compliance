@@ -53,6 +53,9 @@ class JobLedger:
               state TEXT NOT NULL,
               FOREIGN KEY(tenant,job) REFERENCES jobs(tenant,job) ON DELETE CASCADE);
             CREATE INDEX IF NOT EXISTS jobs_queue_idx ON jobs(state,created);
+            CREATE TABLE IF NOT EXISTS maintenance_cursor(
+              name TEXT PRIMARY KEY, created INTEGER NOT NULL,
+              tenant TEXT NOT NULL, job TEXT NOT NULL);
             """)
 
     def _db(self) -> sqlite3.Connection:
@@ -246,15 +249,44 @@ class JobLedger:
         with self._db() as db:
             db.execute("BEGIN IMMEDIATE")
             self._expire(db, t)
-            # Bound cross-store checks; healthy rows must not starve
-            # later revoked rows. Caller can pass multiple batches via
-            # an explicit cursor in a future distributed implementation.
-            rows = db.execute(
-                "SELECT tenant,job,proof FROM jobs "
-                "WHERE state IN ('queued','running') "
-                "ORDER BY created,tenant,job LIMIT ?", (limit,),
-            ).fetchall()
-            for tenant, job, proof in rows:
+            # Durable lexicographic cursor; wrap to the beginning after
+            # the last active row. A bounded pass eventually visits all
+            # active jobs even when the healthy prefix never changes.
+            cursor = db.execute(
+                "SELECT created,tenant,job FROM maintenance_cursor "
+                "WHERE name='revocations'",
+            ).fetchone()
+            if cursor is None:
+                rows = db.execute(
+                    "SELECT created,tenant,job,proof FROM jobs "
+                    "WHERE state IN ('queued','running') "
+                    "ORDER BY created,tenant,job LIMIT ?", (limit,),
+                ).fetchall()
+            else:
+                rows = db.execute(
+                    "SELECT created,tenant,job,proof FROM jobs "
+                    "WHERE state IN ('queued','running') "
+                    "AND (created,tenant,job)>(?,?,?) "
+                    "ORDER BY created,tenant,job LIMIT ?",
+                    (*cursor, limit),
+                ).fetchall()
+                if len(rows) < limit:
+                    rows += db.execute(
+                        "SELECT created,tenant,job,proof FROM jobs "
+                        "WHERE state IN ('queued','running') "
+                        "AND (created,tenant,job)<=(?,?,?) "
+                        "ORDER BY created,tenant,job LIMIT ?",
+                        (*cursor, limit - len(rows)),
+                    ).fetchall()
+            if rows:
+                last = rows[-1][:3]
+                db.execute(
+                    "INSERT INTO maintenance_cursor(name,created,tenant,job) "
+                    "VALUES ('revocations',?,?,?) ON CONFLICT(name) "
+                    "DO UPDATE SET created=excluded.created,"
+                    "tenant=excluded.tenant,job=excluded.job", last,
+                )
+            for _, tenant, job, proof in rows:
                 try:
                     proofs.require_dns_verified(tenant, proof, now=t)
                 except ProofError:

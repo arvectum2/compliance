@@ -19,7 +19,9 @@
       prevent altered claim fields bypassing a revoked domain (offline).
 - [x] EG-002b3a Internal offline revocation reconciliation for queued
       and running leases, sanitized events and bounded batch tests.
-- [ ] EG-002b3b Cursor-based fair reconciliation, cross-store atomicity
+- [x] EG-002b3b1 Durable cursor-based bounded fair reconciliation;
+      wraparound and restart tests on the internal SQLite ledger.
+- [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
       identity, cross-DB revocation and audited telemetry. BLOCKS PUBLIC.

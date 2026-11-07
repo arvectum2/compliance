@@ -77,3 +77,12 @@ Cross-SQLite transactions are not atomic; proof revocation can race
 between check and update. Production workers must recheck proof and
 authorization immediately before every network request; a distributed
 revocation barrier and independent audit remain PUBLIC NO-GO.
+
+
+### EG-002b3b1 fair reconciliation
+
+`reconcile_revocations` persists a lexicographic cursor in the
+private ledger. Bounded passes advance beyond unchanged healthy jobs,
+wrap at the tail and survive restart. It is an offline maintenance
+primitive, **not** an atomic cross-store revocation barrier; a future
+production worker must recheck ownership before each network request.

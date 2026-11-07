@@ -321,3 +321,47 @@ def test_reconcile_retains_healthy_jobs_and_bounds_batch(tmp_path):
     assert all(
         ledger.status("org_A", f"job_{i}")[0] == "denied" for i in range(3)
     )
+
+
+def test_reconciliation_cursor_advances_past_healthy_prefix(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for i in range(5):
+        ledger.enqueue(new_grant(issuer, proof, f"healthy_{i}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    other = proofs.issue("org_A", "other.example.com", now=NOW)
+    revoked = proofs.confirm(
+        "org_A", other.id, lambda _: [other.record_value],
+        verification_method="doh-quorum", now=NOW + 1,
+    )
+    ledger.enqueue(new_grant(issuer, revoked, "revoked_job"),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    proofs.revoke("org_A", revoked.id)
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=2) == 0
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=2) == 0
+    # Cursor survives process restart and reaches the tail.
+    reopened = JobLedger(ledger.path)
+    assert reopened.reconcile_revocations(
+        proofs=proofs, now=NOW + 4, limit=2,
+    ) == 1
+    assert reopened.status("org_A", "revoked_job")[0] == "denied"
+    assert reopened.reconcile_revocations(
+        proofs=proofs, now=NOW + 4, limit=2,
+    ) == 0
+    assert all(reopened.status("org_A", f"healthy_{i}")[0] == "queued"
+               for i in range(5))
+
+
+def test_reconciliation_cursor_wraps_after_deleted_tail(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for i in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{i}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=2) == 0
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=2) == 0
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 4, limit=2) == 0
+    proofs.revoke("org_A", proof.id)
+    # Every active job is reached across bounded sweeps despite cursor wrap.
+    for _ in range(3):
+        ledger.reconcile_revocations(proofs=proofs, now=NOW + 5, limit=1)
+    assert all(ledger.status("org_A", f"job_{i}")[0] == "denied"
+               for i in range(3))
