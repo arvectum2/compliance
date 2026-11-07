@@ -143,6 +143,9 @@ class JobLedger:
                 tenant, job, hostname, proof, expiry = row
                 try:
                     proofs.require_dns_verified(tenant, proof, now=t)
+                    verified = proofs.get_verified(tenant, proof, now=t)
+                    if verified.hostname != hostname:
+                        raise ProofError("Durable job hostname/proof mismatch")
                 except ProofError:
                     db.execute(
                         "UPDATE jobs SET state='denied',updated=? "
@@ -208,6 +211,9 @@ class JobLedger:
             if state == "completed":
                 try:
                     proofs.require_dns_verified(claim.tenant, row[1], now=t)
+                    verified = proofs.get_verified(claim.tenant, row[1], now=t)
+                    if verified.hostname != row[0]:
+                        raise ProofError("Durable job hostname/proof mismatch")
                 except ProofError:
                     revoked = True
                     state = "denied"
@@ -258,13 +264,13 @@ class JobLedger:
             ).fetchone()
             if cursor is None:
                 rows = db.execute(
-                    "SELECT created,tenant,job,proof FROM jobs "
+                    "SELECT created,tenant,job,proof,hostname FROM jobs "
                     "WHERE state IN ('queued','running') "
                     "ORDER BY created,tenant,job LIMIT ?", (limit,),
                 ).fetchall()
             else:
                 rows = db.execute(
-                    "SELECT created,tenant,job,proof FROM jobs "
+                    "SELECT created,tenant,job,proof,hostname FROM jobs "
                     "WHERE state IN ('queued','running') "
                     "AND (created,tenant,job)>(?,?,?) "
                     "ORDER BY created,tenant,job LIMIT ?",
@@ -272,7 +278,7 @@ class JobLedger:
                 ).fetchall()
                 if len(rows) < limit:
                     rows += db.execute(
-                        "SELECT created,tenant,job,proof FROM jobs "
+                        "SELECT created,tenant,job,proof,hostname FROM jobs "
                         "WHERE state IN ('queued','running') "
                         "AND (created,tenant,job)<=(?,?,?) "
                         "ORDER BY created,tenant,job LIMIT ?",
@@ -286,9 +292,12 @@ class JobLedger:
                     "DO UPDATE SET created=excluded.created,"
                     "tenant=excluded.tenant,job=excluded.job", last,
                 )
-            for _, tenant, job, proof in rows:
+            for _, tenant, job, proof, hostname in rows:
                 try:
                     proofs.require_dns_verified(tenant, proof, now=t)
+                    verified = proofs.get_verified(tenant, proof, now=t)
+                    if verified.hostname != hostname:
+                        raise ProofError("Durable job hostname/proof mismatch")
                 except ProofError:
                     db.execute(
                         "UPDATE jobs SET state='denied',updated=?,"

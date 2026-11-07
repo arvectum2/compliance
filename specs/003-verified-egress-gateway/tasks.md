@@ -21,6 +21,8 @@
       and running leases, sanitized events and bounded batch tests.
 - [x] EG-002b3b1 Durable cursor-based bounded fair reconciliation;
       wraparound and restart tests on the internal SQLite ledger.
+- [x] EG-002b3b1a Offline proof-host binding recheck at claim, finish
+      and reconciliation, with corrupt-ledger fail-closed tests.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

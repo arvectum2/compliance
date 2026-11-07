@@ -365,3 +365,53 @@ def test_reconciliation_cursor_wraps_after_deleted_tail(tmp_path):
         ledger.reconcile_revocations(proofs=proofs, now=NOW + 5, limit=1)
     assert all(ledger.status("org_A", f"job_{i}")[0] == "denied"
                for i in range(3))
+
+
+def test_claim_denies_durable_hostname_proof_mismatch(tmp_path):
+    """A valid proof for another host must not authorize a corrupted job."""
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET hostname=? WHERE tenant=? AND job=?",
+            ("different.example.com", "org_A", "job_1"),
+        )
+    assert ledger.claim("worker_1", proofs=proofs, now=NOW + 4) is None
+    assert ledger.status("org_A", "job_1")[0] == "denied"
+
+
+def test_finish_denies_corrupted_durable_hostname_even_with_matching_claim(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET hostname=? WHERE tenant=? AND job=?",
+            ("different.example.com", "org_A", "job_1"),
+        )
+    with pytest.raises(ProofError, match="Real DNS"):
+        ledger.finish(
+            replace(claim, hostname="different.example.com"),
+            worker="worker_1", state="completed", proofs=proofs,
+            bytes_count=1, sha256="a" * 64, now=NOW + 5,
+        )
+    assert ledger.status("org_A", "job_1") == ("denied", None, None)
+
+
+def test_reconcile_denies_corrupted_hostname_without_releasing_lease(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof),
+                   issuer=issuer, proofs=proofs, now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET hostname=? WHERE tenant=? AND job=?",
+            ("different.example.com", "org_A", "job_1"),
+        )
+    assert ledger.reconcile_revocations(proofs=proofs, now=NOW + 5) == 1
+    assert ledger.status("org_A", "job_1")[0] == "denied"
+    with pytest.raises(ProofError):
+        ledger.finish(claim, worker="worker_1", state="denied",
+                      proofs=proofs, now=NOW + 6)

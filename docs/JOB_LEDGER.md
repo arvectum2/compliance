@@ -86,3 +86,12 @@ private ledger. Bounded passes advance beyond unchanged healthy jobs,
 wrap at the tail and survive restart. It is an offline maintenance
 primitive, **not** an atomic cross-store revocation barrier; a future
 production worker must recheck ownership before each network request.
+
+
+### EG-002b3b1a durable host binding
+Claim, finish and reconciliation compare the persisted job hostname
+against the current tenant-scoped DNS proof hostname (not only the
+proof's active status). A corrupted or substituted durable hostname
+is denied, and an active lease is invalidated; three negative tests
+cover these transitions. These are offline consistency checks, not
+a distributed revocation barrier.

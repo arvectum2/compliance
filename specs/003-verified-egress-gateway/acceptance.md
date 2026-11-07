@@ -138,3 +138,13 @@ revocation remains a PUBLIC NO-GO.
 - State transitions remain idempotent and tenant-scoped.
 - Cross-store revocation atomicity, audited worker identity and
   distributed barriers are still PUBLIC NO-GO.
+
+
+## EG-002b3b1a — durable hostname/proof consistency
+- Claim rejects and denies a job whose stored hostname does not match
+  the current tenant-bound real-DoH proof's hostname.
+- Finish refuses completion and clears the lease when the stored job
+  hostname differs from its proof, even with a matching worker Claim.
+- Reconciliation denies mismatched active rows and invalidates leases.
+- Offline corrupt-row regression tests only; no production DNS or
+  cross-SQLite atomic revocation guarantee is claimed.
