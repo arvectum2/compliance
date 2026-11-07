@@ -552,3 +552,35 @@ def test_claim_revoked_fifo_prefix_is_bounded_and_resumable(tmp_path):
                for i in range(8))
     assert all(len(ledger.events("org_A", f"revoked_{i:02}")) == 2
                for i in range(8))
+
+
+def test_expiry_and_retention_indexes_survive_reopening(tmp_path):
+    """Bounded maintenance must not require a full-table scan on each tick."""
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(
+        new_grant(issuer, proof), issuer=issuer, proofs=proofs, now=NOW + 3,
+    )
+    reopened = JobLedger(ledger.path)
+    with reopened._db() as db:
+        indexes = {
+            row[1] for row in db.execute("PRAGMA index_list('jobs')")
+        }
+        assert {
+            "jobs_expiry_idx", "jobs_lease_expiry_idx",
+            "jobs_tenant_active_idx", "jobs_terminal_retention_idx",
+        } <= indexes
+        queued_plan = " ".join(
+            str(row) for row in db.execute(
+                "EXPLAIN QUERY PLAN SELECT tenant,job FROM jobs "
+                "WHERE state='queued' AND expires<=?", (NOW + 4,),
+            )
+        )
+        running_plan = " ".join(
+            str(row) for row in db.execute(
+                "EXPLAIN QUERY PLAN SELECT tenant,job FROM jobs "
+                "WHERE state='running' AND lease_expires<=?", (NOW + 4,),
+            )
+        )
+        assert "jobs_expiry_idx" in queued_plan
+        assert "jobs_lease_expiry_idx" in running_plan
+    assert reopened.status("org_A", "job_1")[0] == "queued"

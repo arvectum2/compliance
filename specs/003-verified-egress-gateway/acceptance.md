@@ -177,3 +177,11 @@ revocation remains a PUBLIC NO-GO.
 - Valid claims remain single-winner and require live proof recheck.
 - This does not solve cross-store atomic revocation or distributed worker
   identity; PUBLIC NO-GO.
+
+
+## EG-002b3b2c — indexed offline maintenance
+- Reopening a private SQLite ledger adds expiry, lease-expiry, active
+  tenant quota and terminal retention indexes without data loss.
+- EXPLAIN QUERY PLAN confirms indexed queued and running expiry lookup.
+- No new network operations, no public executor; cross-store revocation
+  and independently verified worker identity remain PUBLIC NO-GO.

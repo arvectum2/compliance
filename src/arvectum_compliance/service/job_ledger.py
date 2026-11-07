@@ -53,6 +53,14 @@ class JobLedger:
               state TEXT NOT NULL,
               FOREIGN KEY(tenant,job) REFERENCES jobs(tenant,job) ON DELETE CASCADE);
             CREATE INDEX IF NOT EXISTS jobs_queue_idx ON jobs(state,created);
+            CREATE INDEX IF NOT EXISTS jobs_expiry_idx
+              ON jobs(state,expires);
+            CREATE INDEX IF NOT EXISTS jobs_lease_expiry_idx
+              ON jobs(state,lease_expires);
+            CREATE INDEX IF NOT EXISTS jobs_tenant_active_idx
+              ON jobs(tenant,state,expires,lease_expires);
+            CREATE INDEX IF NOT EXISTS jobs_terminal_retention_idx
+              ON jobs(state,updated);
             CREATE TABLE IF NOT EXISTS maintenance_cursor(
               name TEXT PRIMARY KEY, created INTEGER NOT NULL,
               tenant TEXT NOT NULL, job TEXT NOT NULL);

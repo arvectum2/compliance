@@ -121,3 +121,12 @@ path when a backlog has accumulated. It does **not** create cross-DB
 atomic revocation, independently authenticated workers or a production
 distributed queue. A deployment must run a trusted maintenance loop
 and separately review expiry-event retention and operational load.
+
+
+### Maintenance indexes (EG-002b3b2c)
+SQLite maintains separate indexes for queued grant expiry, running
+lease expiry, tenant active quotas and terminal retention. Existing
+0600 ledgers receive the indexes idempotently on reopening. Offline
+tests assert query plans use the expiry indexes, not a table scan.
+These are single-host performance bounds, **not** distributed revocation
+atomicity or a substitute for worker identity review.
