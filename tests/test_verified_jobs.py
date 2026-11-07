@@ -101,3 +101,20 @@ def test_default_dns_callback_is_real_lookup_not_fake(tmp_path, monkeypatch):
     callback.assert_called_once_with(challenge.record_name)
     with pytest.raises(ProofError):
         service.authorize_scan(token, challenge.id, "job_1", now=NOW + 2)
+
+
+def test_trusted_service_only_queues_authenticated_real_proof(tmp_path):
+    from arvectum_compliance.service.job_ledger import JobLedger
+
+    service, alice, _bob, published, _lookup = setup_service(tmp_path)
+    ledger = JobLedger(tmp_path / "queue.db")
+    challenge = service.issue_challenge(alice, "example.com", now=NOW)
+    published.append(challenge.record_value)
+    proof = service.confirm_challenge(alice, challenge.id, now=NOW + 2)
+    # Injection-based DNS is offline-test, never accepted as real proof.
+    with pytest.raises(ProofError, match="Real DNS"):
+        service.queue_scan(
+            alice, proof.id, "test_job", ledger, now=NOW + 3,
+        )
+    with pytest.raises(ProofError):
+        ledger.status("alice", "test_job")

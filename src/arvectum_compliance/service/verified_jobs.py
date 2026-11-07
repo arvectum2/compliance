@@ -7,12 +7,16 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from .authorization import GrantIssuer, ScanGrant
 from .dns_doh import lookup_doh_quorum_txt
 from .domain_proof import PendingProof, VerifiedProof
 from .sqlite_proof import SqliteOwnershipRegistry
 from .tenant_auth import TenantAuth
+
+if TYPE_CHECKING:
+    from .job_ledger import JobLedger
 
 DNSLookup = Callable[[str], list[str]]
 
@@ -68,6 +72,19 @@ class VerifiedScanService:
             max_requests=40, max_bytes=1_000_000,
             policy_version="gateway-v2",
         )
+
+    def queue_scan(
+        self, access_token: str, proof_id: str, job_id: str,
+        ledger: JobLedger, *, now: int | None = None,
+    ) -> ScanGrant:
+        """Authenticated proof-to-job queue. No HTTP worker is started."""
+        grant = self.authorize_scan(
+            access_token, proof_id, job_id, now=now,
+        )
+        ledger.enqueue(
+            grant, issuer=self.issuer, proofs=self.proofs, now=now,
+        )
+        return grant
 
     def revoke_domain(
         self, access_token: str, proof_id: str, *, now: int | None = None,

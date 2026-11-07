@@ -11,7 +11,12 @@
 - [ ] EG-001d4 Production user login/RBAC, external DNS threat review,
       multi-node datastore and signing-key management. BLOCKS PUBLIC.
 - [x] EG-002a Strict stdio IPC bridge, deny-by-default request envelope and caps.
-- [ ] EG-002b Production broker job management, observability and retention.
+- [x] EG-002b1 Internal durable 0600 job ledger, authenticated DNS-proof
+      enrollment, single-winner claim and SHA-only terminal results.
+- [x] EG-002b2 Bounded tenant queue, atomic lease expiry, sanitized state
+      events and 1–90-day retention, offline concurrency/revocation tests.
+- [ ] EG-002b3 Production worker integration, distributed queue/tenant
+      identity, cross-DB revocation and audited telemetry. BLOCKS PUBLIC.
 - [x] EG-003a Temporary Linux gateway namespace with nftables output policy,
       root-to-nonroot capability drop and negative/positive kernel probes.
 - [x] EG-003b1 Python HTTPS GatewaySession runs inside the isolated

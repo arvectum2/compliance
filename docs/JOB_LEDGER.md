@@ -1,0 +1,57 @@
+# EG-002b1 — durable private job ledger (internal control plane)
+
+Status: **offline-verified reference implementation**. No daemon, HTTP
+endpoint, public queue, remote workers, periodic monitoring process or
+multi-tenant SaaS has been deployed.
+
+## Contract
+
+`JobLedger` (service/job_ledger.py) stores a bounded SQLite 0600 job
+queue scoped by `(tenant, job_id)`. Only a valid, unexpired, HMAC-signed
+`gateway-v2` grant with a persisted **real dual-DoH** ownership proof
+may be enqueued; test/legacy DNS proofs are rejected. The tenant-scoped
+`VerifiedScanService.queue_scan` path first authorizes the requester.
+
+- Maximum 100 active jobs per tenant. Repeating the same signed grant
+  is idempotent. Reusing an ID with another grant is refused.
+- Worker `claim` holds a SQLite `BEGIN IMMEDIATE` transaction, marks
+  one FIFO job running, and returns a fresh 256-bit lease capability.
+  Only its SHA-256 digest is stored.
+- Recheck proof before claim; revoked/expired proof causes `denied`
+  without handing a job to a worker. Lease expires in at most 30 seconds
+  and never auto-retries.
+- Only the exact worker + valid lease may finish. Completed results
+  include an integer byte count <=1MB and a SHA-256 digest, not page
+  content. Failed/denied jobs store no response data. An attempt to
+  complete after proof revocation transitions to `denied` and raises.
+- Each transition records a timestamp and state, not HTTP traffic,
+  request parameters, cookies, raw bearer tokens, signed grants,
+  HTML, user data or arbitrary error texts.
+- `prune(days=30, limit=500)` deletes only old terminal records and
+  related event rows, in bounded batches. Retention is 1–90 days.
+
+### Threat-model boundaries
+
+The ledger is an internal job *accounting primitive*, **not** an
+executor or network sandbox. A future trusted worker must re-validate
+the signed grant and current DNS ownership before initiating egress.
+The SQLite queue is single-host only; distributed execution requires
+durable shared state, authenticated worker identities, atomic
+cross-database revocation and operational review. Status read without a
+maintenance/claim/prune pass may show stale `running` until expiry is
+materialized. The 30-second worker token is not a substitute for a
+shorter per-request Ed25519 network permit.
+
+All E2E and unit tests use synthetic offline proofs; no real
+arvectum.com TXT record is created or asserted.
+
+## Acceptance
+
+```sh
+.venv/bin/pytest -q tests/test_job_ledger.py tests/test_verified_jobs.py
+```
+
+Checks cover idempotency, signed-grant tampering, fake DNS rejection,
+tenant isolation, concurrent claim winner, stale leases, revoked DNS
+before and during a job, no token/HTML retention, restrictive file
+permissions, bounded tenant queue and retention cleanup.
