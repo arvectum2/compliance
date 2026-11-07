@@ -163,6 +163,31 @@ class SqliteOwnershipRegistry:
         ):
             raise ProofError("Real DNS ownership proof required")
 
+    def require_dns_verified_host(
+        self, tenant_id: str, proof_id: str, hostname: str,
+        *, now: int | None = None,
+    ) -> None:
+        """Single-snapshot proof, method, expiry and exact-host check.
+
+        Avoids the two-query race between require_dns_verified and
+        get_verified. Does NOT make job DB and proof DB atomic.
+        """
+        tenant_id = _identifier(tenant_id)
+        hostname = canonical_hostname(hostname)
+        current = int(time.time()) if now is None else int(now)
+        with self._connect() as db:
+            row = db.execute(
+                "SELECT status,verified_method,expires_at,hostname "
+                "FROM domain_proofs WHERE id=? AND tenant=?",
+                (proof_id, tenant_id),
+            ).fetchone()
+        if (
+            row is None or row[0] != "verified"
+            or row[1] != "doh-quorum" or current >= row[2]
+            or row[3] != hostname
+        ):
+            raise ProofError("Real DNS ownership proof/hostname required")
+
     def get_verified(
         self, tenant_id: str, proof_id: str, *, now: int | None = None,
     ) -> VerifiedProof:

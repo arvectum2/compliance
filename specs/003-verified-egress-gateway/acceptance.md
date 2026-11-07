@@ -148,3 +148,12 @@ revocation remains a PUBLIC NO-GO.
 - Reconciliation denies mismatched active rows and invalidates leases.
 - Offline corrupt-row regression tests only; no production DNS or
   cross-SQLite atomic revocation guarantee is claimed.
+
+
+## EG-002b3b1b — atomic proof snapshot, not cross-store atomicity
+- One SQL read validates proof status, doh-quorum provenance, expiration
+  and exact hostname before enqueue, claim, finish and reconciliation.
+- Offline negative tests cover signed-grant hostname mismatch, wrong
+  tenant, invalid provenance and revoked proof.
+- No claim of atomicity across proof and job databases; distributed
+  revocation barrier and independent worker identity remain PUBLIC NO-GO.

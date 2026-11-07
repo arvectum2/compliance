@@ -95,3 +95,13 @@ proof's active status). A corrupted or substituted durable hostname
 is denied, and an active lease is invalidated; three negative tests
 cover these transitions. These are offline consistency checks, not
 a distributed revocation barrier.
+
+
+### EG-002b3b1b — snapshot hardening
+Enqueue, claim, finish and reconciliation use a single SQLite read of
+proof status, verification provenance, expiry and exact hostname.
+This prevents an inconsistent pair of proof reads, but cannot guarantee
+atomicity across the independent proof and job databases. A revoke
+committed after this read may still race with an in-flight lease:
+**production release remains blocked** pending a shared transactional
+revocation barrier and authenticated worker implementation.

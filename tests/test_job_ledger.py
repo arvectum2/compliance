@@ -415,3 +415,50 @@ def test_reconcile_denies_corrupted_hostname_without_releasing_lease(tmp_path):
     with pytest.raises(ProofError):
         ledger.finish(claim, worker="worker_1", state="denied",
                       proofs=proofs, now=NOW + 6)
+
+
+def test_enqueue_rejects_signed_grant_with_mismatched_durable_host(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    grant = new_grant(issuer, proof)
+    with proofs._connect() as db:
+        db.execute(
+            "UPDATE domain_proofs SET hostname=? WHERE id=?",
+            ("other.example", proof.id),
+        )
+    with pytest.raises(ProofError):
+        ledger.enqueue(grant, issuer=issuer, proofs=proofs, now=NOW + 3)
+    with pytest.raises(ProofError):
+        ledger.status("org_A", "job_1")
+
+
+def test_single_snapshot_proof_method_and_revocation_gate(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    proofs.require_dns_verified_host(
+        "org_A", proof.id, "example.com", now=NOW + 3,
+    )
+    with pytest.raises(ProofError):
+        proofs.require_dns_verified_host(
+            "other_tenant", proof.id, "example.com", now=NOW + 3,
+        )
+    with pytest.raises(ProofError):
+        proofs.require_dns_verified_host(
+            "org_A", proof.id, "other.example", now=NOW + 3,
+        )
+    with proofs._connect() as db:
+        db.execute(
+            "UPDATE domain_proofs SET verified_method='offline-test' WHERE id=?",
+            (proof.id,),
+        )
+    with pytest.raises(ProofError):
+        ledger.enqueue(new_grant(issuer, proof),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    with proofs._connect() as db:
+        db.execute(
+            "UPDATE domain_proofs SET verified_method='doh-quorum' WHERE id=?",
+            (proof.id,),
+        )
+    proofs.revoke("org_A", proof.id)
+    with pytest.raises(ProofError):
+        proofs.require_dns_verified_host(
+            "org_A", proof.id, "example.com", now=NOW + 4,
+        )

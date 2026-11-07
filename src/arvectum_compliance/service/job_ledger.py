@@ -90,7 +90,9 @@ class JobLedger:
         issuer.require_active(
             grant, tenant_id=grant.tenant_id, job_id=grant.job_id, now=t,
         )
-        proofs.require_dns_verified(grant.tenant_id, grant.proof_id, now=t)
+        proofs.require_dns_verified_host(
+            grant.tenant_id, grant.proof_id, grant.hostname, now=t,
+        )
         digest = hashlib.sha256(grant.signature.encode("ascii")).hexdigest()
         with self._db() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -142,10 +144,9 @@ class JobLedger:
                     return None
                 tenant, job, hostname, proof, expiry = row
                 try:
-                    proofs.require_dns_verified(tenant, proof, now=t)
-                    verified = proofs.get_verified(tenant, proof, now=t)
-                    if verified.hostname != hostname:
-                        raise ProofError("Durable job hostname/proof mismatch")
+                    proofs.require_dns_verified_host(
+                        tenant, proof, hostname, now=t,
+                    )
                 except ProofError:
                     db.execute(
                         "UPDATE jobs SET state='denied',updated=? "
@@ -210,10 +211,9 @@ class JobLedger:
                 raise ProofError("Worker claim does not match durable job")
             if state == "completed":
                 try:
-                    proofs.require_dns_verified(claim.tenant, row[1], now=t)
-                    verified = proofs.get_verified(claim.tenant, row[1], now=t)
-                    if verified.hostname != row[0]:
-                        raise ProofError("Durable job hostname/proof mismatch")
+                    proofs.require_dns_verified_host(
+                        claim.tenant, row[1], row[0], now=t,
+                    )
                 except ProofError:
                     revoked = True
                     state = "denied"
@@ -294,10 +294,9 @@ class JobLedger:
                 )
             for _, tenant, job, proof, hostname in rows:
                 try:
-                    proofs.require_dns_verified(tenant, proof, now=t)
-                    verified = proofs.get_verified(tenant, proof, now=t)
-                    if verified.hostname != hostname:
-                        raise ProofError("Durable job hostname/proof mismatch")
+                    proofs.require_dns_verified_host(
+                        tenant, proof, hostname, now=t,
+                    )
                 except ProofError:
                     db.execute(
                         "UPDATE jobs SET state='denied',updated=?,"
