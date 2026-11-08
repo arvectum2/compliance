@@ -33,6 +33,9 @@
       tenant active quotas and terminal retention; offline reopen/query-plan test.
 - [x] EG-002b3b2d Bounded read-only SQLite ledger integrity preflight;
       anomaly/incomplete scan is a future worker-startup NO-GO.
+- [x] EG-002b3b2e Offline read-only ledger preflight validates tenant/job/
+      proof IDs, canonical host, signed-grant digest, queued worker fields,
+      running worker IDs and bounded lease chronology.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

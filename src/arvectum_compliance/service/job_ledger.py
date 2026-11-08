@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .authorization import GrantIssuer, ScanGrant
-from .domain_proof import ProofError, _identifier
+from .domain_proof import ProofError, _identifier, canonical_hostname
 from .sqlite_proof import SqliteOwnershipRegistry
 
 
@@ -410,15 +410,38 @@ class JobLedger:
             # A bounded scan is explicitly incomplete for larger stores.
             total = db.execute("SELECT count(*) FROM jobs").fetchone()[0]
             rows = db.execute(
-                "SELECT state,worker,lease_digest,lease_expires,"
-                "bytes_count,sha256,expires,created,updated FROM jobs "
+                "SELECT tenant,job,hostname,proof,grant_digest,state,"
+                "worker,lease_digest,lease_expires,bytes_count,sha256,"
+                "expires,created,updated FROM jobs "
                 "ORDER BY tenant,job LIMIT ?", (limit,),
             ).fetchall()
             anomalies = 0
-            for state, worker, digest, lease, count, sha, expiry, created, updated in rows:
+            for (
+                tenant, job, hostname, proof, grant_digest, state, worker,
+                digest, lease, count, sha, expiry, created, updated,
+            ) in rows:
+                try:
+                    valid_identity = (
+                        _identifier(tenant) == tenant
+                        and _identifier(job) == job
+                        and _identifier(proof) == proof
+                        and canonical_hostname(hostname) == hostname
+                    )
+                except (ProofError, TypeError, ValueError):
+                    valid_identity = False
                 active_lease = state == "running"
                 bad = (
-                    state not in ("queued", "running", "completed", "denied", "failed", "expired")
+                    not valid_identity
+                    or not isinstance(grant_digest, str)
+                    or re.fullmatch(r"[a-f0-9]{64}", grant_digest) is None
+                    or state not in (
+                        "queued", "running", "completed", "denied", "failed", "expired"
+                    )
+                    or (state == "queued" and worker is not None)
+                    or (active_lease and (
+                        not isinstance(worker, str)
+                        or re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", worker) is None
+                    ))
                     or (active_lease and (
                         not worker or not isinstance(digest, str)
                         or re.fullmatch(r"[a-f0-9]{64}", digest) is None
@@ -433,6 +456,10 @@ class JobLedger:
                     or (state != "completed" and (count is not None or sha is not None))
                     or type(created) is not int or type(updated) is not int
                     or type(expiry) is not int or updated < created
+                    or expiry <= created
+                    or (active_lease and (
+                        lease <= created or lease > created + 3600
+                    ))
                 )
                 anomalies += bool(bad)
             return {"checked": len(rows), "total": total, "anomalies": anomalies,

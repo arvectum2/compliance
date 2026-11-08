@@ -142,3 +142,15 @@ startup; this is a diagnostic primitive, not an enforced startup gate.
 For large queues, the limit is capped at 10,000; no assurance about
 uninspected rows is implied. It does not establish cross-store atomicity,
 worker identity, or protection against malicious local DB administrators.
+
+
+### EG-002b3b2e — identity and chronology integrity checks
+
+The bounded, read-only preflight now checks canonical exact hostname,
+opaque tenant/job/proof IDs, the stored grant signature digest format,
+queued jobs without stale worker identities, valid running worker IDs,
+and lease/grant chronology. Synthetic offline tampering tests verify
+that these conditions increase the anomaly count without disclosing
+any row content. A clean count does **not** authenticate a worker,
+validate the grant signature against the signing key, or guarantee
+atomic revocation across independent SQLite databases.

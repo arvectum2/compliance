@@ -194,3 +194,12 @@ revocation remains a PUBLIC NO-GO.
 - Incomplete audit or any anomaly is a future worker-startup NO-GO;
   current diagnostic does not start or authorize a worker.
 - Cross-store revocation, distributed worker identity remain PUBLIC NO-GO.
+
+
+## EG-002b3b2e — integrity preflight hardening
+- Bounded read-only job audit flags noncanonical hostnames, invalid opaque
+  identifiers, malformed signed-grant digest and impossible lease timing.
+- Queued rows with stale worker identities and running rows with malformed
+  worker identities fail the preflight. No row payloads are returned.
+- Offline tampering regressions pass. This does not close production
+  cross-database revocation, signing-key or worker-identity release gates.

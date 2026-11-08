@@ -621,3 +621,59 @@ def test_integrity_audit_rejects_terminal_metadata_and_bounded_scan(tmp_path):
             "bytes_count=12 WHERE job='job_0'",
         )
     assert ledger.audit_integrity(limit=2)["anomalies"] == 1
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [
+        ("tenant", "bad/tenant"),
+        ("job", "bad/job"),
+        ("hostname", "https://example.com"),
+        ("hostname", "EXAMPLE.COM"),
+        ("proof", "bad/proof"),
+        ("grant_digest", "not-a-digest"),
+        ("worker", "stale_worker"),
+        ("expires", NOW + 2),
+    ],
+)
+def test_integrity_audit_rejects_corrupt_queued_identity_and_metadata(
+    tmp_path, column, value,
+):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        # Simulate offline tampering; normal SQLite FK enforcement forbids
+        # changes to primary keys referenced by the event journal.
+        if column in ("tenant", "job"):
+            db.execute("PRAGMA foreign_keys=OFF")
+        db.execute(
+            f"UPDATE jobs SET {column}=? WHERE tenant='org_A' AND job='job_1'",
+            (value,),
+        )
+    assert ledger.audit_integrity()["anomalies"] == 1
+
+
+@pytest.mark.parametrize(
+    ("column", "value"),
+    [
+        ("worker", "bad/worker"),
+        ("lease_expires", NOW + 3),
+        ("lease_expires", NOW + 5000),
+    ],
+)
+def test_integrity_audit_rejects_corrupt_running_worker_and_lease(
+    tmp_path, column, value,
+):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute(
+            f"UPDATE jobs SET {column}=? WHERE tenant='org_A' AND job='job_1'",
+            (value,),
+        )
+    assert ledger.audit_integrity()["anomalies"] == 1
