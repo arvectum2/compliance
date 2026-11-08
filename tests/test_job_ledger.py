@@ -799,3 +799,17 @@ def test_integrity_audit_detects_missing_history_outside_bounded_scan(tmp_path):
     result = ledger.audit_integrity(limit=1)
     assert result == {"checked": 1, "total": 3, "anomalies": 1, "complete": 0}
     assert ledger.events("org_A", "job_2") == []
+
+
+def test_integrity_audit_detects_stale_latest_event_outside_bounded_scan(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{index}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity(limit=1)["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute("UPDATE jobs SET updated=updated+1 WHERE tenant=? AND job=?",
+                   ("org_A", "job_2"))
+    result = ledger.audit_integrity(limit=1)
+    assert result["anomalies"] >= 1
+    assert result["complete"] == 0

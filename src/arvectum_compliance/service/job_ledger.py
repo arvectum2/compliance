@@ -467,10 +467,22 @@ class JobLedger:
                 "OR (previous_state IN ('completed','denied','failed','expired')) "
                 "LIMIT 1"
             ).fetchone()
+            # Detect latest-event divergence for every job, not just the
+            # bounded detailed sample. Never return tenant or job identifiers.
+            stale_head = db.execute(
+                "SELECT 1 FROM jobs j WHERE (j.tenant,j.job) > (?,?) AND EXISTS ("
+                "SELECT 1 FROM events e WHERE e.tenant=j.tenant "
+                "AND e.job=j.job AND e.rowid=("
+                "SELECT max(e2.rowid) FROM events e2 "
+                "WHERE e2.tenant=j.tenant AND e2.job=j.job) "
+                "AND (e.state IS NOT j.state OR e.moment IS NOT j.updated)"
+                ") LIMIT 1", (rows[-1][0], rows[-1][1]),
+            ).fetchone() if rows and total > len(rows) else None
             anomalies = (int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
-                         + int(invalid_history is not None))
+                         + int(invalid_history is not None)
+                         + int(stale_head is not None))
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,

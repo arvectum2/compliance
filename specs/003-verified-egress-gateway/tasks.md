@@ -48,6 +48,8 @@
       transitions, including terminal-state resurrection.
 - [x] EG-002b3b2k Offline preflight detects missing job event histories
       even beyond bounded job scan; negative regression.
+- [x] EG-002b3b2l Offline preflight detects latest event/job divergence
+      beyond the bounded detailed scan; negative regression.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

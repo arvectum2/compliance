@@ -229,3 +229,8 @@ revocation remains a PUBLIC NO-GO.
   and running → completed/denied/failed/expired. Terminal states cannot
   transition again. Negative offline corruption tests required.
 - Does not prove event authenticity or distributed revocation; PUBLIC NO-GO.
+
+## EG-002b3b2l — latest-event global consistency (offline)
+- Bounded preflight detects latest journal state/time divergence for jobs
+  outside the detailed sample; no identifiers or payloads are returned.
+- Offline tamper regression required. Distributed revocation remains PUBLIC NO-GO.
