@@ -404,6 +404,10 @@ class JobLedger:
         if type(limit) is not int or not 1 <= limit <= 10000:
             raise ValueError("Invalid audit limit")
         with self._db() as db:
+            # All checks must observe one SQLite snapshot. Without an explicit
+            # read transaction, concurrent maintenance can change jobs/events
+            # between queries and produce a false clean or false anomaly.
+            db.execute("BEGIN")
             result = db.execute("PRAGMA quick_check(1)").fetchone()
             if result is None or result[0] != "ok":
                 raise ProofError("Job database integrity check failed")

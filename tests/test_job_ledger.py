@@ -884,3 +884,26 @@ def test_integrity_audit_rejects_corrupt_reconciliation_cursor(
     with ledger._db() as db:
         db.execute(f"UPDATE maintenance_cursor SET {field}=?", (value,))
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_uses_single_read_snapshot(tmp_path, monkeypatch):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    statements = []
+    original_db = ledger._db
+
+    def traced_db():
+        db = original_db()
+        db.set_trace_callback(statements.append)
+        return db
+
+    monkeypatch.setattr(ledger, "_db", traced_db)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    sql = [statement.strip().upper() for statement in statements]
+    assert "BEGIN" in sql
+    assert sql.index("BEGIN") < next(
+        i for i, statement in enumerate(sql) if statement.startswith("SELECT")
+    )
+    assert not any(statement.startswith(("INSERT", "UPDATE", "DELETE"))
+                   for statement in sql)

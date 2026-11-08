@@ -58,6 +58,8 @@
       negative tamper tests beyond bounded sample.
 - [x] EG-002b3b2p Offline read-only preflight rejects malformed durable
       reconciliation cursors; negative tamper tests.
+- [x] EG-002b3b2q Single SQLite read snapshot for offline integrity audit;
+      trace regression verifies transaction precedes reads.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
