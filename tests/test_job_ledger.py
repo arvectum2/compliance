@@ -696,7 +696,8 @@ def test_integrity_audit_detects_event_journal_divergence(tmp_path, corruption):
         else:
             db.execute("UPDATE events SET moment=moment+1 "
                        "WHERE tenant='org_A' AND job='job_1'")
-    assert ledger.audit_integrity()["anomalies"] == 1
+    expected = 2 if corruption == "wrong_moment" else 1
+    assert ledger.audit_integrity()["anomalies"] == expected
 
 
 def test_integrity_audit_detects_orphaned_journal_outside_job_scan(tmp_path):
@@ -711,3 +712,26 @@ def test_integrity_audit_detects_orphaned_journal_outside_job_scan(tmp_path):
         "checked": 1, "total": 1, "anomalies": 1, "complete": 1,
     }
     assert ledger.audit_integrity(limit=1)["anomalies"] == 1
+
+
+@pytest.mark.parametrize("corruption", ["state", "early", "future", "type"])
+def test_integrity_audit_detects_historical_event_corruption_outside_scan(
+    tmp_path, corruption,
+):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    with ledger._db() as db:
+        # Insert a historical event that is not the latest event for the job.
+        db.execute("INSERT INTO events VALUES (?,?,?,?)",
+                   ("org_A", "job_1", NOW + 3, "queued"))
+        rowid = db.execute("SELECT max(rowid) FROM events").fetchone()[0]
+        if corruption == "state":
+            db.execute("UPDATE events SET state='invalid' WHERE rowid=?", (rowid,))
+        elif corruption == "early":
+            db.execute("UPDATE events SET moment=? WHERE rowid=?", (NOW, rowid))
+        elif corruption == "future":
+            db.execute("UPDATE events SET moment=? WHERE rowid=?", (NOW + 100, rowid))
+        else:
+            db.execute("UPDATE events SET moment='invalid' WHERE rowid=?", (rowid,))
+    assert ledger.audit_integrity(limit=1)["anomalies"] >= 1

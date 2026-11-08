@@ -215,3 +215,10 @@ revocation remains a PUBLIC NO-GO.
   including rows outside the bounded jobs scan. No event payloads exposed.
 - Detection does not repair the database or establish distributed atomicity.
   PUBLIC NO-GO remains unchanged.
+
+
+## EG-002b3b2h — historical event preflight (offline)
+- Read-only global journal check rejects invalid states and timestamps
+  outside job creation/update bounds, even beyond the bounded job scan.
+- This is not a complete event transition proof or distributed revocation
+  barrier; PUBLIC NO-GO remains unchanged.

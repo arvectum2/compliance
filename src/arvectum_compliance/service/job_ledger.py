@@ -427,7 +427,19 @@ class JobLedger:
                 "SELECT 1 FROM jobs j WHERE j.tenant=e.tenant AND j.job=e.job"
                 ") LIMIT 1"
             ).fetchone()
-            anomalies = int(orphan is not None)
+            # The bounded job scan can miss malformed historical events.
+            # Check journal state and chronology globally without returning
+            # payloads; the first violation is enough to fail the preflight.
+            invalid_event = db.execute(
+                "SELECT 1 FROM events e JOIN jobs j "
+                "ON j.tenant=e.tenant AND j.job=e.job "
+                "WHERE e.state NOT IN "
+                "('queued','running','completed','denied','failed','expired') "
+                "OR typeof(e.moment) != 'integer' "
+                "OR e.moment < j.created OR e.moment > j.updated "
+                "LIMIT 1"
+            ).fetchone()
+            anomalies = int(orphan is not None) + int(invalid_event is not None)
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,
