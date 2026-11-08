@@ -938,6 +938,7 @@ def test_integrity_audit_connection_rejects_writes(tmp_path):
                    now=NOW + 3)
     with ledger._db(readonly=True) as db:
         assert db.execute("PRAGMA query_only").fetchone()[0] == 1
+        assert db.execute("PRAGMA trusted_schema").fetchone()[0] == 0
         with pytest.raises(sqlite3.OperationalError):
             db.execute("DELETE FROM jobs")
     assert ledger.audit_integrity()["anomalies"] == 0

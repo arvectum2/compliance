@@ -72,6 +72,9 @@ class JobLedger:
             db = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro",
                                  uri=True, timeout=5, isolation_level=None)
             db.execute("PRAGMA query_only=ON")
+            # Treat persisted SQLite schema as untrusted during diagnostics.
+            # Do not allow schema-defined SQL to invoke application functions.
+            db.execute("PRAGMA trusted_schema=OFF")
         else:
             db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
         db.execute("PRAGMA foreign_keys=ON")
