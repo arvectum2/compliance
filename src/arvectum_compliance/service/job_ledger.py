@@ -478,11 +478,21 @@ class JobLedger:
                 "AND (e.state IS NOT j.state OR e.moment IS NOT j.updated)"
                 ") LIMIT 1", (rows[-1][0], rows[-1][1]),
             ).fetchone() if rows and total > len(rows) else None
+            # Reject malformed grant digests outside the detailed sample too.
+            # A forged digest must not be hidden behind a small audit limit.
+            invalid_digest = db.execute(
+                "SELECT 1 FROM jobs j WHERE (j.tenant,j.job) > (?,?) "
+                "AND (typeof(j.grant_digest) != 'text' "
+                "OR length(j.grant_digest) != 64 "
+                "OR j.grant_digest GLOB '*[^0-9a-f]*') LIMIT 1",
+                (rows[-1][0], rows[-1][1]),
+            ).fetchone() if rows and total > len(rows) else None
             anomalies = (int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
                          + int(invalid_history is not None)
-                         + int(stale_head is not None))
+                         + int(stale_head is not None)
+                         + int(invalid_digest is not None))
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,

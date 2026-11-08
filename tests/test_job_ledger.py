@@ -813,3 +813,17 @@ def test_integrity_audit_detects_stale_latest_event_outside_bounded_scan(tmp_pat
     result = ledger.audit_integrity(limit=1)
     assert result["anomalies"] >= 1
     assert result["complete"] == 0
+
+
+def test_integrity_audit_detects_bad_grant_digest_outside_bounded_scan(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{index}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity(limit=1)["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute("UPDATE jobs SET grant_digest=? WHERE tenant=? AND job=?",
+                   ("X" * 64, "org_A", "job_2"))
+    assert ledger.audit_integrity(limit=1) == {
+        "checked": 1, "total": 3, "anomalies": 1, "complete": 0,
+    }

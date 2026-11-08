@@ -50,6 +50,8 @@
       even beyond bounded job scan; negative regression.
 - [x] EG-002b3b2l Offline preflight detects latest event/job divergence
       beyond the bounded detailed scan; negative regression.
+- [x] EG-002b3b2m Offline preflight rejects malformed grant digests
+      beyond the bounded detailed sample; negative tamper regression.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
