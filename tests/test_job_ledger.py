@@ -907,3 +907,23 @@ def test_integrity_audit_uses_single_read_snapshot(tmp_path, monkeypatch):
     )
     assert not any(statement.startswith(("INSERT", "UPDATE", "DELETE"))
                    for statement in sql)
+
+
+def test_integrity_audit_rejects_shifted_enqueue_event(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE events SET moment=moment+1 WHERE state='queued' "
+            "AND tenant='org_A' AND job='job_1'"
+        )
+    # The timestamp remains inside the job's lifetime only if updated
+    # also advances; neither change may forge the original enqueue time.
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET updated=updated+1 WHERE tenant='org_A' "
+            "AND job='job_1'"
+        )
+    assert ledger.audit_integrity()["anomalies"] >= 1

@@ -448,6 +448,7 @@ class JobLedger:
                 "('queued','running','completed','denied','failed','expired') "
                 "OR typeof(e.moment) != 'integer' "
                 "OR e.moment < j.created OR e.moment > j.updated "
+                "OR (e.state='queued' AND e.moment != j.created) "
                 "LIMIT 1"
             ).fetchone()
             # Journal order is append-only by rowid. A history must begin
