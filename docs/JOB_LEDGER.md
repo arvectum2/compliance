@@ -133,7 +133,7 @@ atomicity or a substitute for worker identity review.
 
 ### EG-002b3b2d — read-only queue integrity preflight
 
-`JobLedger.audit_integrity(limit=1000)` runs SQLite `quick_check(1)`
+`JobLedger.audit_integrity(limit=1000)` runs SQLite `integrity_check(1)`
 and validates bounded job-state, lease-digest, lease-expiry and terminal
 summary invariants without changing job rows or logging secrets. Returns
 only aggregate `checked/total/anomalies/complete` counts. A caller

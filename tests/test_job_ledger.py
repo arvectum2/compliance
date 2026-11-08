@@ -957,6 +957,26 @@ def test_integrity_audit_checks_declared_foreign_keys(tmp_path):
     assert ledger.audit_integrity()["anomalies"] >= 1
 
 
+def test_integrity_audit_checks_full_sqlite_integrity(tmp_path, monkeypatch):
+    # Unlike quick_check, integrity_check validates index consistency too.
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    original = ledger._db
+    statements = []
+
+    def traced_db(*, readonly=False):
+        db = original(readonly=readonly)
+        if readonly:
+            db.set_trace_callback(statements.append)
+        return db
+
+    monkeypatch.setattr(ledger, "_db", traced_db)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    assert any("PRAGMA integrity_check(1)" in sql for sql in statements)
+    assert not any("PRAGMA quick_check" in sql for sql in statements)
+
+
 def test_integrity_audit_clean_foreign_keys(tmp_path):
     proofs, proof, issuer, ledger = provision(tmp_path)
     ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,

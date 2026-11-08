@@ -120,3 +120,6 @@
       Docker controls; confirms denied under nftables.
 - [ ] EG-003b2d3 KMS/HSM, distributed locks, key backups, tenant revocation,
       IPv6 public-routing/NAT64 bypass review. BLOCKS PUBLIC.
+
+- [x] EG-002b3b2x Offline preflight uses full SQLite integrity_check(1)
+      including index consistency, with regression proving invocation.

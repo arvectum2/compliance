@@ -417,10 +417,10 @@ class JobLedger:
             # read transaction, concurrent maintenance can change jobs/events
             # between queries and produce a false clean or false anomaly.
             db.execute("BEGIN")
-            result = db.execute("PRAGMA quick_check(1)").fetchone()
+            result = db.execute("PRAGMA integrity_check(1)").fetchone()
             if result is None or result[0] != "ok":
                 raise ProofError("Job database integrity check failed")
-            # quick_check does not validate foreign keys. Check the entire
+            # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.
             # An orphan in any future ledger table must fail closed too.
             foreign_key_violation = db.execute(
