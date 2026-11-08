@@ -66,6 +66,8 @@
       aggregate-only PASS/NO-GO and fail-closed exit status.
 - [x] EG-002b3b2t SQLite URI read-only audit connection and query-only
       defense; negative write attempt regression (offline).
+- [x] EG-002b3b2u Offline SQLite foreign-key preflight across declared
+      references, independent of quick_check; negative regression.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

@@ -941,3 +941,23 @@ def test_integrity_audit_connection_rejects_writes(tmp_path):
         with pytest.raises(sqlite3.OperationalError):
             db.execute("DELETE FROM jobs")
     assert ledger.audit_integrity()["anomalies"] == 0
+
+
+def test_integrity_audit_checks_declared_foreign_keys(tmp_path):
+    # A valid SQLite file may contain broken foreign keys even when
+    # PRAGMA quick_check returns ok. The diagnostic must reject them.
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute("INSERT INTO events VALUES (?,?,?,?)",
+                   ("orphan_tenant", "orphan_job", NOW + 3, "queued"))
+    assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_clean_foreign_keys(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    assert ledger.audit_integrity()["anomalies"] == 0

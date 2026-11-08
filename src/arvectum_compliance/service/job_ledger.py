@@ -417,6 +417,12 @@ class JobLedger:
             result = db.execute("PRAGMA quick_check(1)").fetchone()
             if result is None or result[0] != "ok":
                 raise ProofError("Job database integrity check failed")
+            # quick_check does not validate foreign keys. Check the entire
+            # schema's declared references without exposing row identifiers.
+            # An orphan in any future ledger table must fail closed too.
+            foreign_key_violation = db.execute(
+                "PRAGMA foreign_key_check"
+            ).fetchone() is not None
             # A bounded scan is explicitly incomplete for larger stores.
             total = db.execute("SELECT count(*) FROM jobs").fetchone()[0]
             rows = db.execute(
@@ -572,6 +578,7 @@ class JobLedger:
                     invalid_cursor = True
                     break
             anomalies = (int(invalid_cursor)
+                         + int(foreign_key_violation and orphan is None)
                          + int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
