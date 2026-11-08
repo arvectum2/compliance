@@ -584,3 +584,40 @@ def test_expiry_and_retention_indexes_survive_reopening(tmp_path):
         assert "jobs_expiry_idx" in queued_plan
         assert "jobs_lease_expiry_idx" in running_plan
     assert reopened.status("org_A", "job_1")[0] == "queued"
+
+
+def test_read_only_integrity_audit_detects_corrupt_worker_lease(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    assert claim is not None
+    assert ledger.audit_integrity() == {
+        "checked": 1, "total": 1, "anomalies": 0, "complete": 1,
+    }
+    before = ledger.events("org_A", "job_1")
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET lease_digest=NULL WHERE tenant=? AND job=?",
+            (claim.tenant, claim.job),
+        )
+    assert ledger.audit_integrity()["anomalies"] == 1
+    assert ledger.events("org_A", "job_1") == before
+
+
+def test_integrity_audit_rejects_terminal_metadata_and_bounded_scan(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for i in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{i}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity(limit=2) == {
+        "checked": 2, "total": 3, "anomalies": 0, "complete": 0,
+    }
+    with pytest.raises(ValueError):
+        ledger.audit_integrity(limit=0)
+    with ledger._db() as db:
+        db.execute(
+            "UPDATE jobs SET state='completed',sha256='INVALID',"
+            "bytes_count=12 WHERE job='job_0'",
+        )
+    assert ledger.audit_integrity(limit=2)["anomalies"] == 1

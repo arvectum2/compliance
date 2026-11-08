@@ -185,3 +185,12 @@ revocation remains a PUBLIC NO-GO.
 - EXPLAIN QUERY PLAN confirms indexed queued and running expiry lookup.
 - No new network operations, no public executor; cross-store revocation
   and independently verified worker identity remain PUBLIC NO-GO.
+
+## EG-002b3b2d — bounded offline ledger preflight
+
+- Read-only SQLite quick_check plus bounded validation of worker lease,
+  terminal SHA/byte metadata and state invariants.
+- Returns aggregate checked/total/anomalies/complete only, no raw tokens.
+- Incomplete audit or any anomaly is a future worker-startup NO-GO;
+  current diagnostic does not start or authorize a worker.
+- Cross-store revocation, distributed worker identity remain PUBLIC NO-GO.

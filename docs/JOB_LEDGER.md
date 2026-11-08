@@ -130,3 +130,15 @@ lease expiry, tenant active quotas and terminal retention. Existing
 tests assert query plans use the expiry indexes, not a table scan.
 These are single-host performance bounds, **not** distributed revocation
 atomicity or a substitute for worker identity review.
+
+### EG-002b3b2d — read-only queue integrity preflight
+
+`JobLedger.audit_integrity(limit=1000)` runs SQLite `quick_check(1)`
+and validates bounded job-state, lease-digest, lease-expiry and terminal
+summary invariants without changing job rows or logging secrets. Returns
+only aggregate `checked/total/anomalies/complete` counts. A caller
+must treat any anomalies **or incomplete audit** as NO-GO for worker
+startup; this is a diagnostic primitive, not an enforced startup gate.
+For large queues, the limit is capped at 10,000; no assurance about
+uninspected rows is implied. It does not establish cross-store atomicity,
+worker identity, or protection against malicious local DB administrators.

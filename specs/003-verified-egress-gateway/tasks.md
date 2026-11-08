@@ -31,6 +31,8 @@
       per call; subsequent claims resume safely (offline).
 - [x] EG-002b3b2c Indexed SQLite maintenance for queued/lease expiry,
       tenant active quotas and terminal retention; offline reopen/query-plan test.
+- [x] EG-002b3b2d Bounded read-only SQLite ledger integrity preflight;
+      anomaly/incomplete scan is a future worker-startup NO-GO.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

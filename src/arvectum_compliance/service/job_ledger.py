@@ -394,3 +394,46 @@ class JobLedger:
                 )
             db.execute("COMMIT")
         return len(stale)
+
+    def audit_integrity(self, *, limit: int = 1000) -> dict[str, int]:
+        """Bounded, read-only internal integrity preflight; never repairs data.
+
+        Returns only aggregate counts. Any anomaly must block worker startup;
+        this is not a substitute for authenticated distributed coordination.
+        """
+        if type(limit) is not int or not 1 <= limit <= 10000:
+            raise ValueError("Invalid audit limit")
+        with self._db() as db:
+            result = db.execute("PRAGMA quick_check(1)").fetchone()
+            if result is None or result[0] != "ok":
+                raise ProofError("Job database integrity check failed")
+            # A bounded scan is explicitly incomplete for larger stores.
+            total = db.execute("SELECT count(*) FROM jobs").fetchone()[0]
+            rows = db.execute(
+                "SELECT state,worker,lease_digest,lease_expires,"
+                "bytes_count,sha256,expires,created,updated FROM jobs "
+                "ORDER BY tenant,job LIMIT ?", (limit,),
+            ).fetchall()
+            anomalies = 0
+            for state, worker, digest, lease, count, sha, expiry, created, updated in rows:
+                active_lease = state == "running"
+                bad = (
+                    state not in ("queued", "running", "completed", "denied", "failed", "expired")
+                    or (active_lease and (
+                        not worker or not isinstance(digest, str)
+                        or re.fullmatch(r"[a-f0-9]{64}", digest) is None
+                        or type(lease) is not int or lease > expiry
+                    ))
+                    or (not active_lease and (digest is not None or lease is not None))
+                    or (state == "completed" and (
+                        type(count) is not int or not 0 <= count <= 1_000_000
+                        or not isinstance(sha, str)
+                        or re.fullmatch(r"[a-f0-9]{64}", sha) is None
+                    ))
+                    or (state != "completed" and (count is not None or sha is not None))
+                    or type(created) is not int or type(updated) is not int
+                    or type(expiry) is not int or updated < created
+                )
+                anomalies += bool(bad)
+            return {"checked": len(rows), "total": total, "anomalies": anomalies,
+                    "complete": int(total <= limit)}
