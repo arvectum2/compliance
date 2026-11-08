@@ -427,6 +427,13 @@ class JobLedger:
                 "SELECT 1 FROM jobs j WHERE j.tenant=e.tenant AND j.job=e.job"
                 ") LIMIT 1"
             ).fetchone()
+            # A missing journal for a job beyond the bounded scan must
+            # also fail closed. Do not expose job identifiers.
+            missing_history = db.execute(
+                "SELECT 1 FROM jobs j WHERE NOT EXISTS ("
+                "SELECT 1 FROM events e WHERE e.tenant=j.tenant "
+                "AND e.job=j.job) LIMIT 1"
+            ).fetchone()
             # The bounded job scan can miss malformed historical events.
             # Check journal state and chronology globally without returning
             # payloads; the first violation is enough to fail the preflight.
@@ -460,7 +467,8 @@ class JobLedger:
                 "OR (previous_state IN ('completed','denied','failed','expired')) "
                 "LIMIT 1"
             ).fetchone()
-            anomalies = (int(orphan is not None)
+            anomalies = (int(missing_history is not None)
+                         + int(orphan is not None)
                          + int(invalid_event is not None)
                          + int(invalid_history is not None))
             for (

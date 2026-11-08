@@ -653,7 +653,7 @@ def test_integrity_audit_rejects_corrupt_queued_identity_and_metadata(
             (value,),
         )
     # A modified primary key also strands the old event journal row.
-    expected = 2 if column in ("tenant", "job") else 1
+    expected = 3 if column in ("tenant", "job") else 1
     assert ledger.audit_integrity()["anomalies"] == expected
 
 
@@ -696,7 +696,7 @@ def test_integrity_audit_detects_event_journal_divergence(tmp_path, corruption):
         else:
             db.execute("UPDATE events SET moment=moment+1 "
                        "WHERE tenant='org_A' AND job='job_1'")
-    expected = 2 if corruption in ("wrong_moment", "wrong_state") else 1
+    expected = 2
     assert ledger.audit_integrity()["anomalies"] == expected
 
 
@@ -784,3 +784,18 @@ def test_integrity_audit_rejects_illegal_state_transitions(tmp_path, states):
         db.execute("UPDATE jobs SET state=? WHERE tenant=? AND job=?",
                    (states[-1], "org_A", "job_1"))
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+
+def test_integrity_audit_detects_missing_history_outside_bounded_scan(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{index}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity(limit=1)["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute("DELETE FROM events WHERE tenant=? AND job=?",
+                   ("org_A", "job_2"))
+    result = ledger.audit_integrity(limit=1)
+    assert result == {"checked": 1, "total": 3, "anomalies": 1, "complete": 0}
+    assert ledger.events("org_A", "job_2") == []
