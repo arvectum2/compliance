@@ -177,3 +177,18 @@ def test_ledger_audit_cli_is_read_only_and_fails_closed(tmp_path, capsys):
     assert rc == 3 and not err and json.loads(out)["gate"] == "NO-GO"
     rc, out, err = call(capsys, state, "ledger-audit", "--limit", "0")
     assert rc == 2 and not out and "ERROR" in err
+
+
+def test_ledger_audit_cli_corrupt_sqlite_fails_closed(tmp_path, capsys):
+    state = tmp_path / "private"
+    state.mkdir(mode=0o700)
+    database = state / "jobs.db"
+    database.write_bytes(b"not a sqlite database")
+    database.chmod(0o600)
+    before = database.read_bytes()
+    rc, out, err = call(capsys, state, "ledger-audit")
+    assert rc == 2 and not out
+    assert "ERROR: DatabaseError" in err
+    assert str(database) not in err
+    assert database.read_bytes() == before
+    assert list(state.iterdir()) == [database]

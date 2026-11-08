@@ -9,6 +9,7 @@ import argparse
 import json
 import os
 import secrets
+import sqlite3
 import stat
 import sys
 from dataclasses import asdict
@@ -195,7 +196,9 @@ def main(argv: list[str] | None = None) -> int:
             service.revoke_domain(token, args.proof_id)
             print('{"status":"revoked"}')
         return 0
-    except (ProofError, OSError, UnicodeError, ValueError, RuntimeError) as exc:
+    except (
+        ProofError, OSError, sqlite3.DatabaseError, UnicodeError, ValueError, RuntimeError
+    ) as exc:
         # Never show bearer token or exact sensitive files in raw error strings.
         print(f"ERROR: {type(exc).__name__}; operator action failed", file=sys.stderr)
         return 2

@@ -68,6 +68,8 @@
       defense; negative write attempt regression (offline).
 - [x] EG-002b3b2u Offline SQLite foreign-key preflight across declared
       references, independent of quick_check; negative regression.
+- [x] EG-002b3b2v Operator ledger-audit fails closed on malformed SQLite
+      without traceback, secret/path disclosure or database mutation.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
