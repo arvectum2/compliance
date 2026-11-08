@@ -696,7 +696,7 @@ def test_integrity_audit_detects_event_journal_divergence(tmp_path, corruption):
         else:
             db.execute("UPDATE events SET moment=moment+1 "
                        "WHERE tenant='org_A' AND job='job_1'")
-    expected = 2 if corruption == "wrong_moment" else 1
+    expected = 2 if corruption in ("wrong_moment", "wrong_state") else 1
     assert ledger.audit_integrity()["anomalies"] == expected
 
 
@@ -735,3 +735,30 @@ def test_integrity_audit_detects_historical_event_corruption_outside_scan(
         else:
             db.execute("UPDATE events SET moment='invalid' WHERE rowid=?", (rowid,))
     assert ledger.audit_integrity(limit=1)["anomalies"] >= 1
+
+
+@pytest.mark.parametrize("corruption", ["backwards", "first_state"])
+def test_integrity_audit_rejects_invalid_journal_order(tmp_path, corruption):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    claim = ledger.claim("worker_1", proofs=proofs, now=NOW + 4)
+    assert claim is not None
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        if corruption == "backwards":
+            # Both moments remain within the job lifetime; only ordering
+            # reveals the forged chronology.
+            db.execute(
+                "UPDATE events SET moment=? WHERE state='queued'",
+                (NOW + 4,),
+            )
+            db.execute(
+                "UPDATE events SET moment=? WHERE state='running'",
+                (NOW + 3,),
+            )
+        else:
+            db.execute(
+                "UPDATE events SET state='running' WHERE state='queued'"
+            )
+    assert ledger.audit_integrity()["anomalies"] >= 1

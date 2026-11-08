@@ -439,7 +439,23 @@ class JobLedger:
                 "OR e.moment < j.created OR e.moment > j.updated "
                 "LIMIT 1"
             ).fetchone()
-            anomalies = int(orphan is not None) + int(invalid_event is not None)
+            # Journal order is append-only by rowid. A history must begin
+            # queued, and timestamps must never move backwards. This catches
+            # forged intermediate transitions even if the latest row matches.
+            invalid_history = db.execute(
+                "SELECT 1 FROM ("
+                "SELECT state,moment,"
+                "LAG(moment) OVER (PARTITION BY tenant,job ORDER BY rowid) "
+                "AS previous_moment,"
+                "ROW_NUMBER() OVER (PARTITION BY tenant,job ORDER BY rowid) "
+                "AS position FROM events"
+                ") WHERE (position=1 AND state!='queued') "
+                "OR (previous_moment IS NOT NULL AND moment<previous_moment) "
+                "LIMIT 1"
+            ).fetchone()
+            anomalies = (int(orphan is not None)
+                         + int(invalid_event is not None)
+                         + int(invalid_history is not None))
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,
