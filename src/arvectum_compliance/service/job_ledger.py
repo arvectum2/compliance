@@ -412,13 +412,18 @@ class JobLedger:
             rows = db.execute(
                 "SELECT tenant,job,hostname,proof,grant_digest,state,"
                 "worker,lease_digest,lease_expires,bytes_count,sha256,"
-                "expires,created,updated FROM jobs "
-                "ORDER BY tenant,job LIMIT ?", (limit,),
+                "expires,created,updated,"
+                "(SELECT state FROM events WHERE events.tenant=jobs.tenant "
+                "AND events.job=jobs.job ORDER BY rowid DESC LIMIT 1),"
+                "(SELECT moment FROM events WHERE events.tenant=jobs.tenant "
+                "AND events.job=jobs.job ORDER BY rowid DESC LIMIT 1) "
+                "FROM jobs ORDER BY tenant,job LIMIT ?", (limit,),
             ).fetchall()
             anomalies = 0
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,
+                last_state, last_moment,
             ) in rows:
                 try:
                     valid_identity = (
@@ -432,6 +437,8 @@ class JobLedger:
                 active_lease = state == "running"
                 bad = (
                     not valid_identity
+                    or last_state != state or type(last_moment) is not int
+                    or (type(last_moment) is int and last_moment != updated)
                     or not isinstance(grant_digest, str)
                     or re.fullmatch(r"[a-f0-9]{64}", grant_digest) is None
                     or state not in (

@@ -36,6 +36,8 @@
 - [x] EG-002b3b2e Offline read-only ledger preflight validates tenant/job/
       proof IDs, canonical host, signed-grant digest, queued worker fields,
       running worker IDs and bounded lease chronology.
+- [x] EG-002b3b2f Offline bounded ledger preflight checks latest event
+      journal state and timestamp consistency; negative tamper tests.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

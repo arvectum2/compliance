@@ -203,3 +203,9 @@ revocation remains a PUBLIC NO-GO.
   worker identities fail the preflight. No row payloads are returned.
 - Offline tampering regressions pass. This does not close production
   cross-database revocation, signing-key or worker-identity release gates.
+
+## EG-002b3b2f — latest event consistency (offline)
+- Bounded read-only preflight requires the latest event state to match the
+  durable job state and its moment to equal the last update timestamp.
+- Missing, wrong-state and wrong-time events fail closed in offline tests.
+- Does not attest complete event history or cross-store atomicity; PUBLIC NO-GO.

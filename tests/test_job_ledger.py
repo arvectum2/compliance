@@ -677,3 +677,21 @@ def test_integrity_audit_rejects_corrupt_running_worker_and_lease(
             (value,),
         )
     assert ledger.audit_integrity()["anomalies"] == 1
+
+
+@pytest.mark.parametrize("corruption", ["missing", "wrong_state", "wrong_moment"])
+def test_integrity_audit_detects_event_journal_divergence(tmp_path, corruption):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        if corruption == "missing":
+            db.execute("DELETE FROM events WHERE tenant='org_A' AND job='job_1'")
+        elif corruption == "wrong_state":
+            db.execute("UPDATE events SET state='running' "
+                       "WHERE tenant='org_A' AND job='job_1'")
+        else:
+            db.execute("UPDATE events SET moment=moment+1 "
+                       "WHERE tenant='org_A' AND job='job_1'")
+    assert ledger.audit_integrity()["anomalies"] == 1
