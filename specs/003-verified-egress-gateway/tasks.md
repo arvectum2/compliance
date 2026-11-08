@@ -123,3 +123,6 @@
 
 - [x] EG-002b3b2x Offline preflight uses full SQLite integrity_check(1)
       including index consistency, with regression proving invocation.
+
+- [x] EG-002b3b2y Offline preflight detects missing required SQLite
+      maintenance indexes despite passing integrity_check; negative test.

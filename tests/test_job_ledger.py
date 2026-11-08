@@ -982,3 +982,15 @@ def test_integrity_audit_clean_foreign_keys(tmp_path):
     ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
                    now=NOW + 3)
     assert ledger.audit_integrity()["anomalies"] == 0
+
+
+def test_integrity_audit_rejects_missing_maintenance_index(tmp_path):
+    # SQLite integrity_check still returns ok after a legitimate DROP INDEX,
+    # but the ledger must not start workers with degraded maintenance indexes.
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("DROP INDEX jobs_lease_expiry_idx")
+        assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
+    assert ledger.audit_integrity()["anomalies"] >= 1

@@ -240,3 +240,8 @@ revocation remains a PUBLIC NO-GO.
   and noncanonical tenant/job cursor identities without exposing values.
 - Negative offline tests required; this is not a distributed revocation
   barrier or authenticated worker startup. PUBLIC NO-GO.
+
+## EG-002b3b2y — required ledger indexes (offline)
+
+- Read-only preflight rejects dropped maintenance indexes even when SQLite
+  integrity_check reports ok; negative regression required. PUBLIC NO-GO.

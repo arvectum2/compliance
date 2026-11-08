@@ -420,6 +420,20 @@ class JobLedger:
             result = db.execute("PRAGMA integrity_check(1)").fetchone()
             if result is None or result[0] != "ok":
                 raise ProofError("Job database integrity check failed")
+            # SQLite integrity_check can pass after a required performance
+            # index is dropped. A missing index can make bounded maintenance
+            # unexpectedly expensive, so preflight must reject schema drift.
+            required_indexes = {
+                "jobs_queue_idx", "jobs_expiry_idx", "jobs_lease_expiry_idx",
+                "jobs_tenant_active_idx", "jobs_terminal_retention_idx",
+            }
+            actual_indexes = {
+                name for (name,) in db.execute(
+                    "SELECT name FROM sqlite_master WHERE type='index' "
+                    "AND tbl_name='jobs'"
+                )
+            }
+            missing_indexes = bool(required_indexes - actual_indexes)
             # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.
             # An orphan in any future ledger table must fail closed too.
@@ -580,7 +594,8 @@ class JobLedger:
                 except (ProofError, TypeError, ValueError):
                     invalid_cursor = True
                     break
-            anomalies = (int(invalid_cursor)
+            anomalies = (int(missing_indexes)
+                         + int(invalid_cursor)
                          + int(foreign_key_violation and orphan is None)
                          + int(missing_history is not None)
                          + int(orphan is not None)
