@@ -509,13 +509,47 @@ class JobLedger:
                     except (ProofError, TypeError, ValueError):
                         invalid_identity = True
                         break
+            # Even a bounded detailed audit must fail closed when an
+            # unsampled job has inconsistent worker/lease/result metadata.
+            # This is an offline diagnostic, not a distributed lease gate.
+            invalid_tail_metadata = db.execute(
+                "SELECT 1 FROM jobs j WHERE (j.tenant,j.job) > (?,?) AND ("
+                "j.state NOT IN ('queued','running','completed','denied','failed','expired') "
+                "OR (j.state='queued' AND j.worker IS NOT NULL) "
+                "OR (j.state='running' AND ("
+                "j.worker IS NULL OR typeof(j.worker)!='text' "
+                "OR length(j.worker) NOT BETWEEN 1 AND 100 "
+                "OR j.worker GLOB '*[^a-zA-Z0-9_-]*' "
+                "OR typeof(j.lease_digest)!='text' "
+                "OR length(j.lease_digest)!=64 "
+                "OR j.lease_digest GLOB '*[^0-9a-f]*' "
+                "OR typeof(j.lease_expires)!='integer' "
+                "OR j.lease_expires<=j.created "
+                "OR j.lease_expires>j.created+3600 "
+                "OR j.lease_expires>j.expires)) "
+                "OR (j.state!='running' AND ("
+                "j.lease_digest IS NOT NULL OR j.lease_expires IS NOT NULL)) "
+                "OR (j.state='completed' AND ("
+                "typeof(j.bytes_count)!='integer' "
+                "OR j.bytes_count NOT BETWEEN 0 AND 1000000 "
+                "OR typeof(j.sha256)!='text' OR length(j.sha256)!=64 "
+                "OR j.sha256 GLOB '*[^0-9a-f]*')) "
+                "OR (j.state!='completed' AND ("
+                "j.bytes_count IS NOT NULL OR j.sha256 IS NOT NULL)) "
+                "OR typeof(j.created)!='integer' "
+                "OR typeof(j.updated)!='integer' "
+                "OR typeof(j.expires)!='integer' "
+                "OR j.updated<j.created OR j.expires<=j.created"
+                ") LIMIT 1", (rows[-1][0], rows[-1][1]),
+            ).fetchone() if rows and total > len(rows) else None
             anomalies = (int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
                          + int(invalid_history is not None)
                          + int(stale_head is not None)
                          + int(invalid_digest is not None)
-                         + int(invalid_identity))
+                         + int(invalid_identity)
+                         + int(invalid_tail_metadata is not None))
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,

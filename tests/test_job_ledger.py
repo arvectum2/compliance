@@ -841,3 +841,22 @@ def test_integrity_audit_detects_noncanonical_host_outside_sample(tmp_path):
     assert ledger.audit_integrity(limit=1) == {
         "checked": 1, "total": 3, "anomalies": 1, "complete": 0,
     }
+
+
+@pytest.mark.parametrize("field,value", [
+    ("worker", "bad worker"),
+    ("lease_digest", "not-a-digest"),
+    ("lease_expires", NOW + 100000),
+    ("bytes_count", 12),
+    ("created", "invalid"),
+])
+def test_integrity_audit_detects_tail_lease_metadata(tmp_path, field, value):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    for index in range(3):
+        ledger.enqueue(new_grant(issuer, proof, f"job_{index}"),
+                       issuer=issuer, proofs=proofs, now=NOW + 3)
+    assert ledger.audit_integrity(limit=1)["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute(f"UPDATE jobs SET {field}=? WHERE tenant=? AND job=?",
+                   (value, "org_A", "job_2"))
+    assert ledger.audit_integrity(limit=1)["anomalies"] >= 1
