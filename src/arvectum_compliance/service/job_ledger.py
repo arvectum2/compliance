@@ -542,7 +542,26 @@ class JobLedger:
                 "OR j.updated<j.created OR j.expires<=j.created"
                 ") LIMIT 1", (rows[-1][0], rows[-1][1]),
             ).fetchone() if rows and total > len(rows) else None
-            anomalies = (int(missing_history is not None)
+            # The reconciliation cursor is durable control-plane state.
+            # Reject malformed or unexpected entries before any future
+            # worker startup; never expose the cursor's identifiers.
+            invalid_cursor = False
+            for name, cursor_created, cursor_tenant, cursor_job in db.execute(
+                "SELECT name,created,tenant,job FROM maintenance_cursor"
+            ):
+                try:
+                    if (name != "revocations"
+                        or type(cursor_created) is not int
+                        or cursor_created < 0
+                        or _identifier(cursor_tenant) != cursor_tenant
+                        or _identifier(cursor_job) != cursor_job):
+                        invalid_cursor = True
+                        break
+                except (ProofError, TypeError, ValueError):
+                    invalid_cursor = True
+                    break
+            anomalies = (int(invalid_cursor)
+                         + int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
                          + int(invalid_history is not None)

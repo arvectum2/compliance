@@ -860,3 +860,27 @@ def test_integrity_audit_detects_tail_lease_metadata(tmp_path, field, value):
         db.execute(f"UPDATE jobs SET {field}=? WHERE tenant=? AND job=?",
                    (value, "org_A", "job_2"))
     assert ledger.audit_integrity(limit=1)["anomalies"] >= 1
+
+
+@pytest.mark.parametrize(("field", "value"), [
+    ("name", "unexpected"),
+    ("created", -1),
+    ("created", "invalid"),
+    ("tenant", "bad/tenant"),
+    ("job", "bad/job"),
+])
+def test_integrity_audit_rejects_corrupt_reconciliation_cursor(
+    tmp_path, field, value,
+):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute(
+            "INSERT INTO maintenance_cursor(name,created,tenant,job) "
+            "VALUES ('revocations',?,?,?)", (NOW + 3, "org_A", "job_1"),
+        )
+    assert ledger.audit_integrity()["anomalies"] == 0
+    with ledger._db() as db:
+        db.execute(f"UPDATE maintenance_cursor SET {field}=?", (value,))
+    assert ledger.audit_integrity()["anomalies"] >= 1

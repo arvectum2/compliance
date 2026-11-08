@@ -234,3 +234,9 @@ revocation remains a PUBLIC NO-GO.
 - Bounded preflight detects latest journal state/time divergence for jobs
   outside the detailed sample; no identifiers or payloads are returned.
 - Offline tamper regression required. Distributed revocation remains PUBLIC NO-GO.
+
+## EG-002b3b2p — reconciliation cursor integrity (offline)
+- Read-only preflight rejects unknown cursor names, invalid timestamps,
+  and noncanonical tenant/job cursor identities without exposing values.
+- Negative offline tests required; this is not a distributed revocation
+  barrier or authenticated worker startup. PUBLIC NO-GO.

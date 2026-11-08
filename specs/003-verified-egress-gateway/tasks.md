@@ -56,6 +56,8 @@
       hostnames beyond the bounded sample; negative regression.
 - [x] EG-002b3b2o Offline tail lease/result metadata integrity preflight;
       negative tamper tests beyond bounded sample.
+- [x] EG-002b3b2p Offline read-only preflight rejects malformed durable
+      reconciliation cursors; negative tamper tests.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
