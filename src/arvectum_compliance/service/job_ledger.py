@@ -444,10 +444,16 @@ class JobLedger:
                 if actual_indexes.get(name) != (False, False):
                     invalid_indexes = True
                     continue
-                columns = tuple(
-                    row[2] for row in db.execute(f'PRAGMA index_info("{name}")')
+                # xinfo also exposes DESC flags, collations and hidden
+                # expression/rowid slots that index_info cannot validate.
+                key_columns = tuple(
+                    (row[2], row[3], row[4])
+                    for row in db.execute(f'PRAGMA index_xinfo("{name}")')
+                    if row[5]  # key column, not implicit rowid
                 )
-                if columns != expected_columns:
+                if key_columns != tuple(
+                    (column, 0, "BINARY") for column in expected_columns
+                ):
                     invalid_indexes = True
             missing_indexes = invalid_indexes
             # integrity_check does not validate foreign keys. Check the entire

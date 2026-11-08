@@ -129,3 +129,6 @@
 
 - [x] EG-002b3b2z Offline preflight verifies required maintenance index
       column order, nonunique and nonpartial definitions; negative tests.
+
+- [x] EG-002b3b2aa Offline index preflight validates ASC/BINARY key semantics
+      with SQLite index_xinfo; descending/collation negative regressions.
