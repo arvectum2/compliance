@@ -66,8 +66,14 @@ class JobLedger:
               tenant TEXT NOT NULL, job TEXT NOT NULL);
             """)
 
-    def _db(self) -> sqlite3.Connection:
-        db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
+    def _db(self, *, readonly: bool = False) -> sqlite3.Connection:
+        if readonly:
+            # URI mode=ro prevents accidental creation and any audit writes.
+            db = sqlite3.connect(self.path.resolve().as_uri() + "?mode=ro",
+                                 uri=True, timeout=5, isolation_level=None)
+            db.execute("PRAGMA query_only=ON")
+        else:
+            db = sqlite3.connect(self.path, timeout=5, isolation_level=None)
         db.execute("PRAGMA foreign_keys=ON")
         return db
 
@@ -403,7 +409,7 @@ class JobLedger:
         """
         if type(limit) is not int or not 1 <= limit <= 10000:
             raise ValueError("Invalid audit limit")
-        with self._db() as db:
+        with self._db(readonly=True) as db:
             # All checks must observe one SQLite snapshot. Without an explicit
             # read transaction, concurrent maintenance can change jobs/events
             # between queries and produce a false clean or false anomaly.

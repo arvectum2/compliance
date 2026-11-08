@@ -893,8 +893,9 @@ def test_integrity_audit_uses_single_read_snapshot(tmp_path, monkeypatch):
     statements = []
     original_db = ledger._db
 
-    def traced_db():
-        db = original_db()
+    def traced_db(*, readonly=False):
+        assert readonly is True
+        db = original_db(readonly=readonly)
         db.set_trace_callback(statements.append)
         return db
 
@@ -927,3 +928,16 @@ def test_integrity_audit_rejects_shifted_enqueue_event(tmp_path):
             "AND job='job_1'"
         )
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_connection_rejects_writes(tmp_path):
+    import sqlite3
+
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db(readonly=True) as db:
+        assert db.execute("PRAGMA query_only").fetchone()[0] == 1
+        with pytest.raises(sqlite3.OperationalError):
+            db.execute("DELETE FROM jobs")
+    assert ledger.audit_integrity()["anomalies"] == 0
