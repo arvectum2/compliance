@@ -222,3 +222,10 @@ revocation remains a PUBLIC NO-GO.
   outside job creation/update bounds, even beyond the bounded job scan.
 - This is not a complete event transition proof or distributed revocation
   barrier; PUBLIC NO-GO remains unchanged.
+
+## EG-002b3b2j — offline state-transition preflight
+
+- Journal transitions are restricted to queued → running/denied/expired
+  and running → completed/denied/failed/expired. Terminal states cannot
+  transition again. Negative offline corruption tests required.
+- Does not prove event authenticity or distributed revocation; PUBLIC NO-GO.

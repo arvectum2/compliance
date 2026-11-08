@@ -445,12 +445,19 @@ class JobLedger:
             invalid_history = db.execute(
                 "SELECT 1 FROM ("
                 "SELECT state,moment,"
+                "LAG(state) OVER (PARTITION BY tenant,job ORDER BY rowid) "
+                "AS previous_state,"
                 "LAG(moment) OVER (PARTITION BY tenant,job ORDER BY rowid) "
                 "AS previous_moment,"
                 "ROW_NUMBER() OVER (PARTITION BY tenant,job ORDER BY rowid) "
                 "AS position FROM events"
                 ") WHERE (position=1 AND state!='queued') "
                 "OR (previous_moment IS NOT NULL AND moment<previous_moment) "
+                "OR (previous_state='queued' AND state NOT IN "
+                "('running','denied','expired')) "
+                "OR (previous_state='running' AND state NOT IN "
+                "('completed','denied','failed','expired')) "
+                "OR (previous_state IN ('completed','denied','failed','expired')) "
                 "LIMIT 1"
             ).fetchone()
             anomalies = (int(orphan is not None)

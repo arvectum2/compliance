@@ -762,3 +762,25 @@ def test_integrity_audit_rejects_invalid_journal_order(tmp_path, corruption):
                 "UPDATE events SET state='running' WHERE state='queued'"
             )
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+@pytest.mark.parametrize("states", [
+    ("queued", "completed"),
+    ("queued", "failed"),
+    ("queued", "queued"),
+    ("queued", "running", "running"),
+    ("queued", "denied", "running"),
+    ("queued", "running", "completed", "expired"),
+])
+def test_integrity_audit_rejects_illegal_state_transitions(tmp_path, states):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("DELETE FROM events")
+        for state in states:
+            db.execute("INSERT INTO events VALUES (?,?,?,?)",
+                       ("org_A", "job_1", NOW + 3, state))
+        db.execute("UPDATE jobs SET state=? WHERE tenant=? AND job=?",
+                   (states[-1], "org_A", "job_1"))
+    assert ledger.audit_integrity()["anomalies"] >= 1

@@ -44,6 +44,8 @@
       states/timestamps beyond the bounded job scan.
 - [x] EG-002b3b2i Offline journal preflight detects out-of-order event
       timestamps and histories not beginning queued.
+- [x] EG-002b3b2j Offline journal preflight rejects illegal state
+      transitions, including terminal-state resurrection.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
