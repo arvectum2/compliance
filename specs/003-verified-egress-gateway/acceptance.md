@@ -209,3 +209,9 @@ revocation remains a PUBLIC NO-GO.
   durable job state and its moment to equal the last update timestamp.
 - Missing, wrong-state and wrong-time events fail closed in offline tests.
 - Does not attest complete event history or cross-store atomicity; PUBLIC NO-GO.
+
+## EG-002b3b2g — orphan event preflight (offline)
+- Read-only preflight detects at least one event with no corresponding job,
+  including rows outside the bounded jobs scan. No event payloads exposed.
+- Detection does not repair the database or establish distributed atomicity.
+  PUBLIC NO-GO remains unchanged.

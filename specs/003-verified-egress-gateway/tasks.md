@@ -38,6 +38,8 @@
       running worker IDs and bounded lease chronology.
 - [x] EG-002b3b2f Offline bounded ledger preflight checks latest event
       journal state and timestamp consistency; negative tamper tests.
+- [x] EG-002b3b2g Offline ledger preflight detects orphaned event rows
+      outside the bounded jobs scan; negative FK-disabled tamper test.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant

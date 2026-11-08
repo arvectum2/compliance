@@ -419,7 +419,15 @@ class JobLedger:
                 "AND events.job=jobs.job ORDER BY rowid DESC LIMIT 1) "
                 "FROM jobs ORDER BY tenant,job LIMIT ?", (limit,),
             ).fetchall()
-            anomalies = 0
+            # Detect orphaned journal rows even when the parent job was
+            # deleted with foreign-key enforcement disabled. The anti-join
+            # stops at the first orphan and never returns sensitive payloads.
+            orphan = db.execute(
+                "SELECT 1 FROM events e WHERE NOT EXISTS ("
+                "SELECT 1 FROM jobs j WHERE j.tenant=e.tenant AND j.job=e.job"
+                ") LIMIT 1"
+            ).fetchone()
+            anomalies = int(orphan is not None)
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,

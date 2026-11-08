@@ -652,7 +652,9 @@ def test_integrity_audit_rejects_corrupt_queued_identity_and_metadata(
             f"UPDATE jobs SET {column}=? WHERE tenant='org_A' AND job='job_1'",
             (value,),
         )
-    assert ledger.audit_integrity()["anomalies"] == 1
+    # A modified primary key also strands the old event journal row.
+    expected = 2 if column in ("tenant", "job") else 1
+    assert ledger.audit_integrity()["anomalies"] == expected
 
 
 @pytest.mark.parametrize(
@@ -695,3 +697,17 @@ def test_integrity_audit_detects_event_journal_divergence(tmp_path, corruption):
             db.execute("UPDATE events SET moment=moment+1 "
                        "WHERE tenant='org_A' AND job='job_1'")
     assert ledger.audit_integrity()["anomalies"] == 1
+
+
+def test_integrity_audit_detects_orphaned_journal_outside_job_scan(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer,
+                   proofs=proofs, now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("PRAGMA foreign_keys=OFF")
+        db.execute("INSERT INTO events VALUES (?,?,?,?)",
+                   ("org_orphan", "job_orphan", NOW + 3, "queued"))
+    assert ledger.audit_integrity() == {
+        "checked": 1, "total": 1, "anomalies": 1, "complete": 1,
+    }
+    assert ledger.audit_integrity(limit=1)["anomalies"] == 1
