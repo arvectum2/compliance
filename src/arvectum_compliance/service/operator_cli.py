@@ -88,6 +88,8 @@ def _parser() -> argparse.ArgumentParser:
     revoke = commands.add_parser("revoke")
     revoke.add_argument("--token-file", type=Path, required=True)
     revoke.add_argument("--proof-id", required=True)
+    audit = commands.add_parser("ledger-audit", help="Offline read-only job ledger preflight")
+    audit.add_argument("--limit", type=int, default=1000)
     commands.add_parser("attestor-init", help="Initialize private Ed25519 signing identity")
     commands.add_parser("attestor-info", help="Show public signing-key fingerprint")
     rotation = commands.add_parser(
@@ -112,6 +114,23 @@ def main(argv: list[str] | None = None) -> int:
             root = _private_dir(args.state_dir, create=True)
         else:
             root = _private_dir(args.state_dir)
+        if args.command == "ledger-audit":
+            from .job_ledger import JobLedger
+
+            path = root / "jobs.db"
+            if path.is_symlink() or not path.is_file():
+                raise ProofError("Missing or unsafe job database")
+            mode = path.stat().st_mode
+            if not stat.S_ISREG(mode) or mode & 0o777 != 0o600:
+                raise ProofError("Job store must be private regular file")
+            # Avoid JobLedger.__init__: it creates files and runs schema DDL.
+            ledger = object.__new__(JobLedger)
+            ledger.path = path
+            result = ledger.audit_integrity(limit=args.limit)
+            passed = bool(result["complete"] and not result["anomalies"])
+            print(json.dumps({**result, "gate": "PASS" if passed else "NO-GO"},
+                             sort_keys=True))
+            return 0 if passed else 3
         service = _service(root)
         if args.command == "provision":
             tenant = _identifier(args.tenant)

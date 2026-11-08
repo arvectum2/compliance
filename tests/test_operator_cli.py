@@ -152,3 +152,28 @@ def test_binary_signing_key_preserves_leading_trailing_whitespace(tmp_path, caps
     assert (state / "signing.key").read_bytes() == example_key
     assert operator_cli._read_secret(state / "signing.key") == example_key
     assert call(capsys, state, "attestor-init")[0] == 0
+
+
+def test_ledger_audit_cli_is_read_only_and_fails_closed(tmp_path, capsys):
+    from arvectum_compliance.service.job_ledger import JobLedger
+
+    state = tmp_path / "private"
+    state.mkdir(mode=0o700)
+    rc, out, err = call(capsys, state, "ledger-audit")
+    assert rc == 2 and not out and "ERROR" in err
+    assert list(state.iterdir()) == []
+
+    ledger = JobLedger(state / "jobs.db")
+    before = (state / "jobs.db").read_bytes()
+    rc, out, err = call(capsys, state, "ledger-audit")
+    assert rc == 0 and not err and json.loads(out)["gate"] == "PASS"
+    assert (state / "jobs.db").read_bytes() == before
+    assert not (state / "signing.key").exists()
+
+    with ledger._db() as db:
+        db.execute("INSERT INTO maintenance_cursor(name,created,tenant,job) "
+                   "VALUES ('invalid',1,'org_A','job_1')")
+    rc, out, err = call(capsys, state, "ledger-audit")
+    assert rc == 3 and not err and json.loads(out)["gate"] == "NO-GO"
+    rc, out, err = call(capsys, state, "ledger-audit", "--limit", "0")
+    assert rc == 2 and not out and "ERROR" in err

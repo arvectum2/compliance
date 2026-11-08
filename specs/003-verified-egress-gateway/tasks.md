@@ -62,6 +62,8 @@
       trace regression verifies transaction precedes reads.
 - [x] EG-002b3b2r Offline journal preflight rejects shifted enqueue
       timestamps, including forged updated metadata; negative regression.
+- [x] EG-002b3b2s Offline operator ledger-audit command; read-only,
+      aggregate-only PASS/NO-GO and fail-closed exit status.
 - [ ] EG-002b3b2 Cross-store atomicity, distributed revocation barrier
       and independently audited worker identity. BLOCKS PUBLIC.
 - [ ] EG-002b3 Production worker integration, distributed queue/tenant
