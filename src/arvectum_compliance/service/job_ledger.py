@@ -487,12 +487,35 @@ class JobLedger:
                 "OR j.grant_digest GLOB '*[^0-9a-f]*') LIMIT 1",
                 (rows[-1][0], rows[-1][1]),
             ).fetchone() if rows and total > len(rows) else None
+            # Sampled identity checks must not allow malformed identifiers or
+            # noncanonical hostnames to hide in the unsampled tail. SQLite
+            # GLOB checks are only a fast filter; Python validates canonical
+            # hostnames and identifiers without exposing their values.
+            invalid_identity = False
+            if rows and total > len(rows):
+                tail = db.execute(
+                    "SELECT tenant,job,proof,hostname FROM jobs "
+                    "WHERE (tenant,job) > (?,?) ORDER BY tenant,job",
+                    (rows[-1][0], rows[-1][1]),
+                )
+                for tail_tenant, tail_job, tail_proof, tail_host in tail:
+                    try:
+                        if (_identifier(tail_tenant) != tail_tenant
+                             or _identifier(tail_job) != tail_job
+                             or _identifier(tail_proof) != tail_proof
+                             or canonical_hostname(tail_host) != tail_host):
+                            invalid_identity = True
+                            break
+                    except (ProofError, TypeError, ValueError):
+                        invalid_identity = True
+                        break
             anomalies = (int(missing_history is not None)
                          + int(orphan is not None)
                          + int(invalid_event is not None)
                          + int(invalid_history is not None)
                          + int(stale_head is not None)
-                         + int(invalid_digest is not None))
+                         + int(invalid_digest is not None)
+                         + int(invalid_identity))
             for (
                 tenant, job, hostname, proof, grant_digest, state, worker,
                 digest, lease, count, sha, expiry, created, updated,
