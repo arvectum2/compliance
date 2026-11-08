@@ -126,3 +126,6 @@
 
 - [x] EG-002b3b2y Offline preflight detects missing required SQLite
       maintenance indexes despite passing integrity_check; negative test.
+
+- [x] EG-002b3b2z Offline preflight verifies required maintenance index
+      column order, nonunique and nonpartial definitions; negative tests.

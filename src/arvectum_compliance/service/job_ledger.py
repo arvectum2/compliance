@@ -424,16 +424,32 @@ class JobLedger:
             # index is dropped. A missing index can make bounded maintenance
             # unexpectedly expensive, so preflight must reject schema drift.
             required_indexes = {
-                "jobs_queue_idx", "jobs_expiry_idx", "jobs_lease_expiry_idx",
-                "jobs_tenant_active_idx", "jobs_terminal_retention_idx",
+                "jobs_queue_idx": ("state", "created"),
+                "jobs_expiry_idx": ("state", "expires"),
+                "jobs_lease_expiry_idx": ("state", "lease_expires"),
+                "jobs_tenant_active_idx": (
+                    "tenant", "state", "expires", "lease_expires",
+                ),
+                "jobs_terminal_retention_idx": ("state", "updated"),
             }
+            # A same-named index with the wrong columns, order, or a
+            # partial predicate can silently break bounded maintenance.
+            # Names below are fixed literals, never user-provided SQL.
             actual_indexes = {
-                name for (name,) in db.execute(
-                    "SELECT name FROM sqlite_master WHERE type='index' "
-                    "AND tbl_name='jobs'"
-                )
+                row[1]: (bool(row[2]), bool(row[4]))
+                for row in db.execute("PRAGMA index_list('jobs')")
             }
-            missing_indexes = bool(required_indexes - actual_indexes)
+            invalid_indexes = False
+            for name, expected_columns in required_indexes.items():
+                if actual_indexes.get(name) != (False, False):
+                    invalid_indexes = True
+                    continue
+                columns = tuple(
+                    row[2] for row in db.execute(f'PRAGMA index_info("{name}")')
+                )
+                if columns != expected_columns:
+                    invalid_indexes = True
+            missing_indexes = invalid_indexes
             # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.
             # An orphan in any future ledger table must fail closed too.

@@ -994,3 +994,25 @@ def test_integrity_audit_rejects_missing_maintenance_index(tmp_path):
         db.execute("DROP INDEX jobs_lease_expiry_idx")
         assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_rejects_wrong_maintenance_index_columns(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("DROP INDEX jobs_queue_idx")
+        db.execute("CREATE INDEX jobs_queue_idx ON jobs(created,state)")
+        assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
+    assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_rejects_partial_maintenance_index(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("DROP INDEX jobs_queue_idx")
+        db.execute("CREATE INDEX jobs_queue_idx ON jobs(state,created) "
+                   "WHERE state='queued'")
+    assert ledger.audit_integrity()["anomalies"] >= 1
