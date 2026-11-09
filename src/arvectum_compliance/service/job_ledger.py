@@ -462,6 +462,16 @@ class JobLedger:
                 "SELECT 1 FROM sqlite_master WHERE type IN ('trigger','view') "
                 "LIMIT 1"
             ).fetchone() is not None
+            # Extra persistent tables are not part of the ledger contract;
+            # reject schema drift even when integrity_check reports ok.
+            actual_tables = {
+                row[0] for row in db.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            unexpected_schema |= actual_tables != {
+                "jobs", "events", "maintenance_cursor",
+            }
             missing_indexes = invalid_indexes
             # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.

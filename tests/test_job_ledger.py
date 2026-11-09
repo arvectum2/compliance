@@ -1056,3 +1056,13 @@ def test_integrity_audit_rejects_unexpected_view(tmp_path):
     with ledger._db() as db:
         db.execute("CREATE VIEW injected_view AS SELECT * FROM jobs")
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_rejects_unexpected_table(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("CREATE TABLE injected_table(payload TEXT)")
+        assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
+    assert ledger.audit_integrity()["anomalies"] >= 1

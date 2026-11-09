@@ -135,3 +135,6 @@
 
 - [x] EG-002b3b2ab Offline preflight rejects unexpected SQLite triggers
       and views; negative schema-drift regressions. PUBLIC NO-GO.
+
+- [x] EG-002b3b2ac Offline audit rejects extra persistent SQLite tables
+      despite passing integrity_check; negative schema-drift test. NO-GO.
