@@ -472,6 +472,17 @@ class JobLedger:
             unexpected_schema |= actual_tables != {
                 "jobs", "events", "maintenance_cursor",
             }
+            # Additional user-defined indexes are schema drift too. They can
+            # impose unreviewed write overhead or change query planning.
+            # SQLite-generated PRIMARY KEY indexes have NULL SQL and are
+            # deliberately excluded from this explicit-index allowlist.
+            explicit_indexes = {
+                row[0] for row in db.execute(
+                    "SELECT name FROM sqlite_master "
+                    "WHERE type='index' AND sql IS NOT NULL"
+                )
+            }
+            unexpected_schema |= explicit_indexes != set(required_indexes)
             missing_indexes = invalid_indexes
             # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.

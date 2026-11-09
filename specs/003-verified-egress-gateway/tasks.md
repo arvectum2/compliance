@@ -138,3 +138,6 @@
 
 - [x] EG-002b3b2ac Offline audit rejects extra persistent SQLite tables
       despite passing integrity_check; negative schema-drift test. NO-GO.
+
+- [x] EG-002b3b2ad Offline audit rejects unapproved explicit SQLite indexes
+      while allowing SQLite-generated primary-key indexes; negative regression.

@@ -1066,3 +1066,13 @@ def test_integrity_audit_rejects_unexpected_table(tmp_path):
         db.execute("CREATE TABLE injected_table(payload TEXT)")
         assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
     assert ledger.audit_integrity()["anomalies"] >= 1
+
+
+def test_integrity_audit_rejects_extra_explicit_index(tmp_path):
+    proofs, proof, issuer, ledger = provision(tmp_path)
+    ledger.enqueue(new_grant(issuer, proof), issuer=issuer, proofs=proofs,
+                   now=NOW + 3)
+    with ledger._db() as db:
+        db.execute("CREATE INDEX injected_events_idx ON events(moment)")
+        assert db.execute("PRAGMA integrity_check(1)").fetchone()[0] == "ok"
+    assert ledger.audit_integrity()["anomalies"] >= 1
