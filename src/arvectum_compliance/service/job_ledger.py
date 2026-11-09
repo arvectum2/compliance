@@ -455,6 +455,13 @@ class JobLedger:
                     (column, 0, "BINARY") for column in expected_columns
                 ):
                     invalid_indexes = True
+            # A trigger added to the persisted schema can silently alter
+            # future queue mutations even if all indexes remain valid.
+            # This ledger deliberately defines no triggers or views.
+            unexpected_schema = db.execute(
+                "SELECT 1 FROM sqlite_master WHERE type IN ('trigger','view') "
+                "LIMIT 1"
+            ).fetchone() is not None
             missing_indexes = invalid_indexes
             # integrity_check does not validate foreign keys. Check the entire
             # schema's declared references without exposing row identifiers.
@@ -616,7 +623,8 @@ class JobLedger:
                 except (ProofError, TypeError, ValueError):
                     invalid_cursor = True
                     break
-            anomalies = (int(missing_indexes)
+            anomalies = (int(unexpected_schema)
+                         + int(missing_indexes)
                          + int(invalid_cursor)
                          + int(foreign_key_violation and orphan is None)
                          + int(missing_history is not None)

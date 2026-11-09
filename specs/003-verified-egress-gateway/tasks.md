@@ -132,3 +132,6 @@
 
 - [x] EG-002b3b2aa Offline index preflight validates ASC/BINARY key semantics
       with SQLite index_xinfo; descending/collation negative regressions.
+
+- [x] EG-002b3b2ab Offline preflight rejects unexpected SQLite triggers
+      and views; negative schema-drift regressions. PUBLIC NO-GO.
