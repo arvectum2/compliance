@@ -19,7 +19,7 @@ _TOP = {
     "scenario_version", "generated_at", "source_sha256", "browser_version",
 }
 _PHASE = {"phase", "requests", "cookies", "blocked"}
-_ALLOWED_FIXTURES = {"consent.html", "attack.html", "inconclusive.html"}
+_ALLOWED_FIXTURES = {"consent.html", "attack.html", "inconclusive.html", "security.html"}
 
 
 def _host_counts(items: object) -> tuple[HostCount, ...]:

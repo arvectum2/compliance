@@ -95,7 +95,11 @@
 - [ ] EG-003b2c4 KMS/HSM rotation, real DNS-owned acceptance, independent
       IPv6/DNS/subresource testing. BLOCKS PUBLIC.
 - [x] EG-004a Pinned public IP, TLS hostname validation, DNS/ports/redirect denial.
-- [ ] EG-004b Live redirects, subresources, iframe, CORS and WebSocket QA.
+- [x] EG-004b1 Offline synthetic redirects, content-type confusion,
+      iframe/popup, CORS, WebSocket, POST and off-origin negative E2E.
+      Signed gateway and browser IPC both enforce response status/MIME.
+- [ ] EG-004b2 Authorized owned-site live redirects, subresources, iframe,
+      CORS and WebSocket QA with independent security review. BLOCKS PUBLIC.
 - [x] EG-005a No-network Chromium ↔ signed gateway ↔ synthetic HTML end-to-end.
 - [x] EG-005b1 Internal hardcoded arvectum.com root-document-only
       browser flow; no external DNS proof asserted.

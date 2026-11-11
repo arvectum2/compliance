@@ -100,3 +100,14 @@ gateway remains an explicit release blocker.
   key beginning with LF and ending in a space.
 - Local Python, JS, Docker and kernel acceptance passed. Real domain
   TXT challenge remains absent; public SaaS stays NO-GO.
+
+
+## EG-004b1 — signed response and browser frame controls
+
+The attested gateway now validates 200-only and matching MIME even
+when transport is substituted by a test fake. Chromium independently
+validates response framing and content type before `route.fulfill`,
+blocks iframe/popup document navigation and records sanitized
+WebSocket host attempts. A new synthetic attack fixture tests
+redirect/CORS/POST/foreign host denials without real network egress.
+See [EG004B_NETWORK_QA.md](EG004B_NETWORK_QA.md).

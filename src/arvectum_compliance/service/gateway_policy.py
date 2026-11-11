@@ -10,6 +10,7 @@ from arvectum_compliance.adapters.pinned_http import PinnedResponse, fetch_publi
 from .authorization import GrantIssuer, ScanGrant
 from .domain_proof import ProofError, canonical_hostname
 from .resource_scope import allowed_same_origin
+from .response_policy import require_safe_response
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +77,11 @@ class GatewaySession:
             response: PinnedResponse = self._fetcher(
                 url, timeout_s=8.0, max_bytes=min(remaining, 1_000_000),
             )
+            if self._grant.policy_version == "gateway-v2":
+                require_safe_response(
+                    response.status, response.content_type,
+                    resource_type=resource_type,
+                )
             if len(response.body) > remaining:
                 raise ProofError("Gateway response exceeded authorized byte budget")
             self._bytes += len(response.body)

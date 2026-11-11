@@ -27,7 +27,7 @@ from arvectum_compliance.service.authorization import GrantIssuer
 from arvectum_compliance.service.domain_proof import OwnershipRegistry
 from arvectum_compliance.service.gateway_policy import GatewaySession
 
-FIXTURES = {"consent.html", "attack.html", "inconclusive.html"}
+FIXTURES = {"consent.html", "attack.html", "inconclusive.html", "security.html"}
 ALLOWED_TYPES = {"document", "script", "stylesheet", "image", "fetch", "xhr"}
 OWNED_SITE = "arvectum.com"
 FIXTURE_SITE = "compliance-fixture.invalid"
@@ -134,6 +134,13 @@ def serve_attested_fixture(fixture: str) -> int:
         def fixture_fetch(url: str, **_opts) -> PinnedResponse:
             if url == f"https://{FIXTURE_SITE}/":
                 return PinnedResponse(200, "text/html; charset=utf-8", html)
+            if (
+                fixture == "security.html"
+                and url == f"https://{FIXTURE_SITE}/assets/redirect.js"
+            ):
+                # Synthetic upstream redirect: never allowed through the
+                # signed response policy, even with a valid GET permit.
+                return PinnedResponse(302, "application/javascript", b"")
             return PinnedResponse(204, "text/plain", b"")
 
         gateway = AttestedGatewaySession(verifier, lease, fetcher=fixture_fetch)

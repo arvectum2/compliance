@@ -245,3 +245,19 @@ revocation remains a PUBLIC NO-GO.
 
 - Read-only preflight rejects dropped maintenance indexes even when SQLite
   integrity_check reports ok; negative regression required. PUBLIC NO-GO.
+
+
+## EG-004b1 — synthetic network and response safety (2026-11-11)
+
+- Signed v2 gateway refuses mocked HTTP 3xx/206/non-200 and MIME
+  mismatch before delivering content to Chromium. Legacy v1 fixture
+  compatibility remains deliberately isolated from the v2 rules.
+- Chromium independently verifies signed-gateway HTTP 200, media
+  family and strict bounded base64 before fulfilling any request.
+- Nested same-origin and third-party iframes/popup document requests
+  cannot reuse the top-level document permission. WebSockets are
+  closed in the network-none browser; CORS/POST/API/foreign hosts
+  are rejected by browser/host/gateway.
+- Real two-container `security.html` E2E uses only offline synthetic
+  content; checks blocked host counts and prevents canary leaks.
+- EG-004b2 live owned-site validation and external audit NOT completed.

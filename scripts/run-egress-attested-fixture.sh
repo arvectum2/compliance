@@ -4,7 +4,7 @@ set -euo pipefail
 repo="$(CDPATH='' cd "$(dirname "$0")/.." && pwd)"
 if [[ "$#" -ne 1 ]]; then echo 'Expected one fixture' >&2; exit 2; fi
 case "$1" in
-  consent.html|attack.html|inconclusive.html) ;;
+  consent.html|attack.html|inconclusive.html|security.html) ;;
   *) echo 'Only synthetic fixture names accepted' >&2; exit 2 ;;
 esac
 pub="${COMPLIANCE_ATTEST_PUBLIC_KEY_FILE:-}"

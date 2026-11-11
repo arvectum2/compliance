@@ -4,7 +4,10 @@ import { createHash } from 'node:crypto';
 import { networkInterfaces } from 'node:os';
 import readline from 'node:readline';
 import { chromium } from 'playwright';
-import { ALLOWED_FIXTURES, cookieHosts, hostCounts, safeHostname } from './policy.mjs';
+import {
+  ALLOWED_FIXTURES, cookieHosts, hostCounts, safeHostname, permittedMainFrame,
+  permittedGatewayReply,
+} from './policy.mjs';
 
 const MAX_EVENTS = 120;
 const fixture = process.argv[2];
@@ -57,12 +60,26 @@ async function observe(phase) {
   const context = await browser.newContext({
     javaScriptEnabled: true, acceptDownloads: false, serviceWorkers: 'block',
   });
-  if (typeof context.routeWebSocket === 'function') {
-    await context.routeWebSocket('**/*', (ws) => ws.close());
-  }
   let page;
   const attempted = [];
   const blocked = [];
+  if (typeof context.routeWebSocket === 'function') {
+    await context.routeWebSocket('**/*', (ws) => {
+      // WebSockets cannot be routed via our signed GET-only gateway.
+      // Count the hostname only; never retain paths, queries, or payloads.
+      let host = '(invalid)';
+      try {
+        const parsed = new URL(ws.url());
+        if ((parsed.protocol === 'wss:' || parsed.protocol === 'ws:')
+            && !parsed.username && !parsed.password) {
+          host = parsed.hostname.toLowerCase();
+        }
+      } catch {}
+      attempted.push(host);
+      blocked.push(host);
+      ws.close();
+    });
+  }
   try {
     await context.route('**/*', async (route) => {
       const request = route.request();
@@ -73,6 +90,7 @@ async function observe(phase) {
       const method = request.method();
       if (
         attempted.length > MAX_EVENTS
+        || !permittedMainFrame(request, page)
         || method !== 'GET'
         || !['document', 'stylesheet', 'script', 'image', 'fetch', 'xhr'].includes(
           request.resourceType())
@@ -83,12 +101,7 @@ async function observe(phase) {
       }
       try {
         const response = await askGateway(request.url(), method, request.resourceType());
-        if (
-          response.kind !== 'reply' || response.allowed !== true
-          || typeof response.body_b64 !== 'string'
-          || typeof response.content_type !== 'string'
-          || response.body_b64.length > 1_500_000
-        ) {
+        if (!permittedGatewayReply(response, request.resourceType())) {
           blocked.push(host);
           await route.abort('blockedbyclient');
           return;

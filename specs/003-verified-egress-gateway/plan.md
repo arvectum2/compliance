@@ -110,3 +110,13 @@ fcntl locks, explicit operator-approved crash recovery. The scope is
 a single trusted machine. Add an independent kernel IPv6 loopback probe,
 with reachable negative control and blocked protected case. Next
 phase is independent public-IPv6/DNS audit and KMS-based orchestration.
+
+
+## EG-004b1 — offline response and frame abuse assurance
+
+Introduce a shared Python v2 HTTP/MIME allowlist applied after even
+a mocked transport; mirror the result validation in Chromium IPC.
+Block iframe/pop-up document navigation before host egress requests.
+Use an offline synthetic malicious page exercising redirect, CORS,
+WebSocket, POST and subresource attempts. The real verified-domain
+browser security assessment remains EG-004b2, release NO-GO.

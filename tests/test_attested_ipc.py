@@ -166,3 +166,25 @@ def test_no_unsigned_permit_can_read_from_gateway():
             permit=replace(valid, signature="0" * 128), now=NOW + 4,
         )
     assert session.requests == 0
+
+
+@pytest.mark.parametrize(("status", "mime"), [
+    (301, "text/html"), (302, "text/html"), (307, "text/html"),
+    (200, "application/json"), (200, "text/plain"), (206, "text/html"),
+])
+def test_attested_gateway_rejects_redirect_or_html_mime_confusion(status, mime):
+    _registry, _proof, grant, host, lease, verifier = setup()
+    session = AttestedGatewaySession(
+        verifier, lease, now=NOW + 3,
+        fetcher=lambda url, **kw: PinnedResponse(status, mime, b"NOT_TRANSMITTED"),
+    )
+    permit = host.permit(
+        grant, lease, sequence=1, url=ROOT, resource_type="document", now=NOW + 4,
+    )
+    with pytest.raises(ProofError):
+        session.get(
+            ROOT, sequence=1, resource_type="document",
+            permit=permit, now=NOW + 4,
+        )
+    assert session.used_bytes == 0
+    assert session.requests == 1

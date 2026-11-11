@@ -46,3 +46,21 @@ def test_tampered_signed_lease_is_rejected_by_container():
 def test_tampered_request_permit_never_yields_success_report():
     with pytest.raises(RuntimeError, match="failed closed"):
         run_attested_fixture("consent.html", tamper_permit=True)
+
+
+def test_offline_browser_denies_iframes_websocket_cors_and_redirect():
+    """Synthetic attack page cannot expand authorized network footprint."""
+    report, signed_requests = run_attested_fixture("security.html")
+    assert 3 <= signed_requests <= 15
+    assert report.rejected is None and report.accepted is None
+    blocked = {item.host for item in report.baseline.blocked_requests}
+    assert "iframe.attacker.example" in blocked
+    assert "cdn.attacker.example" in blocked
+    assert "cors.attacker.example" in blocked
+    # Exact synthetic origin subresource was signed but the gateway
+    # refused an upstream 302 and an unapproved CSS media type.
+    assert "compliance-fixture.invalid" in blocked
+    assert "socket.attacker.example" in blocked
+    serialized = json.dumps(report.to_dict())
+    for canary in ("WS_CANARY", "CORS_CANARY", "API_CANARY", "POST_CANARY"):
+        assert canary not in serialized

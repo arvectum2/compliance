@@ -9,6 +9,7 @@ from arvectum_compliance.adapters.pinned_http import PinnedResponse, fetch_publi
 from .attested_ipc import GatewayAttestor, SignedLease, SignedPermit
 from .domain_proof import ProofError
 from .gateway_policy import GatewayResult
+from .response_policy import require_safe_response
 
 
 class AttestedGatewaySession:
@@ -41,6 +42,9 @@ class AttestedGatewaySession:
             self.requests += 1
             response: PinnedResponse = self.fetcher(
                 url, timeout_s=8.0, max_bytes=min(budget, 1_000_000),
+            )
+            require_safe_response(
+                response.status, response.content_type, resource_type=resource_type,
             )
             if len(response.body) > budget:
                 raise ProofError("Attested gateway byte cap exceeded")

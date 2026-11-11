@@ -26,7 +26,7 @@ from arvectum_compliance.service.tenant_auth import TenantAuth
 from arvectum_compliance.service.verified_jobs import VerifiedScanService
 
 ROOT = Path(__file__).resolve().parents[3]
-FIXTURES = frozenset(("consent.html", "attack.html", "inconclusive.html"))
+FIXTURES = frozenset(("consent.html", "attack.html", "inconclusive.html", "security.html"))
 
 
 def run_attested_fixture(
