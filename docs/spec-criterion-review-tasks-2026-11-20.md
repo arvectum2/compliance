@@ -1,0 +1,41 @@
+# Individual requirement verification — candidate
+
+Review tasks only. Existing native task status and scope unchanged; test candidates are not receipts. All open until actual criterion-specific evidence is reviewed. PUBLIC NO-GO remains.
+
+- [ ] REVIEW-001-FR-001 — Verify public models, schema and Python API.
+- [ ] REVIEW-001-FR-002 — Check form metadata and redaction.
+- [ ] REVIEW-001-FR-003 — Heuristic-only findings and limitations.
+- [ ] REVIEW-001-FR-004 — Check every finding field and determinism.
+- [ ] REVIEW-001-FR-005 — Check no unauthorized acquisition, limits and no JS.
+- [ ] REVIEW-001-FR-006 — Verify pinned public Data Platform contract.
+- [ ] REVIEW-001-FR-007 — Review default tests for unexpected network.
+- [ ] REVIEW-001-FR-008 — Verify every required limitation.
+- [ ] REVIEW-001-AT-001 — Run positive/negative fixtures and check CI.
+- [ ] REVIEW-001-AT-002 — Refusal before network.
+- [ ] REVIEW-001-AT-003 — Private/credential URLs and redirects.
+- [ ] REVIEW-001-AT-004 — Redaction, JSON, stable sort.
+- [ ] REVIEW-001-AT-005 — Direct Python API independent of CLI.
+- [ ] REVIEW-002-FR-002-01 — Production B001c remains open.
+- [ ] REVIEW-002-FR-002-02 — Live ownership and authorization remain gated.
+- [ ] REVIEW-002-FR-002-03 — Distinct contexts and approved controls.
+- [ ] REVIEW-002-FR-002-04 — Output redaction and event metadata.
+- [ ] REVIEW-002-FR-002-05 — Ambiguous consent outcome.
+- [ ] REVIEW-002-FR-002-06 — Review required provenance and replayability.
+- [ ] REVIEW-002-AT-002-01 — Acceptance doc records fixtures only.
+- [ ] REVIEW-002-AT-002-02 — Production subresource rebinding not proven.
+- [ ] REVIEW-002-AT-002-03 — Inspect redacted artifacts.
+- [ ] REVIEW-002-AT-002-04 — No submit or POST on false controls.
+- [ ] REVIEW-003-FR-003-01 — Production ownership and auth gated.
+- [ ] REVIEW-003-FR-003-02 — Immutable snapshot and distributed lifecycle.
+- [ ] REVIEW-003-FR-003-03 — Independent production bypass test open.
+- [ ] REVIEW-003-FR-003-04 — All protocol, port, IP and TLS gates.
+- [ ] REVIEW-003-FR-003-05 — Live redirects and protocol exclusions open.
+- [ ] REVIEW-003-FR-003-06 — Production independent review open.
+- [ ] REVIEW-003-FR-003-07 — All caps across real worker/gateway.
+- [ ] REVIEW-003-FR-003-08 — Sanitized production output.
+- [ ] REVIEW-003-FR-003-09 — Inconclusive result, not merely transport denial.
+- [ ] REVIEW-003-AT-003-01 — Real proof and tenant/replay/expiry scope.
+- [ ] REVIEW-003-AT-003-02 — Live DNS/subresource acceptance not proven.
+- [ ] REVIEW-003-AT-003-03 — Independent bypass on final configuration.
+- [ ] REVIEW-003-AT-003-04 — Root-only pilot is not DNS-verified live consent acceptance.
+- [ ] REVIEW-003-AT-003-05 — Reconcile exact ARM64/x86-64 evidence.
