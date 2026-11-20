@@ -17,7 +17,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Verify public models, schema and Python API.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-001",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -30,7 +32,9 @@
         "tests/test_core.py"
       ],
       "review_needed": "Check form metadata and redaction.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-002",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -43,7 +47,9 @@
         "tests/test_core.py"
       ],
       "review_needed": "Heuristic-only findings and limitations.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-003",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -56,7 +62,9 @@
         "tests/test_core.py"
       ],
       "review_needed": "Check every finding field and determinism.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-004",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -71,7 +79,9 @@
         "tests/test_pinned_http.py"
       ],
       "review_needed": "Check no unauthorized acquisition, limits and no JS.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-005",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -84,7 +94,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Verify pinned public Data Platform contract.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-006",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -98,7 +110,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Review default tests for unexpected network.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-007",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -113,7 +127,9 @@
         "tests/test_cli.py"
       ],
       "review_needed": "Verify every required limitation.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-FR-008",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -126,7 +142,9 @@
         "tests/test_core.py"
       ],
       "review_needed": "Run positive/negative fixtures and check CI.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-AT-001",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -140,7 +158,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Refusal before network.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-AT-002",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -154,7 +174,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Private/credential URLs and redirects.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-AT-003",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -167,7 +189,9 @@
         "tests/test_core.py"
       ],
       "review_needed": "Redaction, JSON, stable sort.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-AT-004",
+      "acceptance_evidence": []
     },
     {
       "package": "001-foundation-and-static-scan",
@@ -181,7 +205,9 @@
         "tests/test_adapter.py"
       ],
       "review_needed": "Direct Python API independent of CLI.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-001-AT-005",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -197,7 +223,9 @@
         "tests/test_pinned_http.py"
       ],
       "review_needed": "Production B001c remains open.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-01",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -213,7 +241,9 @@
         "tests/test_browser_evidence.py"
       ],
       "review_needed": "Live ownership and authorization remain gated.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-02",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -227,7 +257,9 @@
         "tests/test_browser_evidence.py"
       ],
       "review_needed": "Distinct contexts and approved controls.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-03",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -241,7 +273,9 @@
         "tests/test_browser_docker.py"
       ],
       "review_needed": "Output redaction and event metadata.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-04",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -255,7 +289,9 @@
         "tests/test_browser_evidence.py"
       ],
       "review_needed": "Ambiguous consent outcome.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-05",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -268,7 +304,9 @@
         "tests/test_browser_evidence.py"
       ],
       "review_needed": "Review required provenance and replayability.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-FR-002-06",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -281,7 +319,9 @@
         "tests/test_browser_docker.py"
       ],
       "review_needed": "Acceptance doc records fixtures only.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-AT-002-01",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -296,7 +336,9 @@
         "tests/test_pinned_http.py"
       ],
       "review_needed": "Production subresource rebinding not proven.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-AT-002-02",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -310,7 +352,9 @@
         "tests/test_browser_docker.py"
       ],
       "review_needed": "Inspect redacted artifacts.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-AT-002-03",
+      "acceptance_evidence": []
     },
     {
       "package": "002-browser-consent-observation",
@@ -323,7 +367,9 @@
         "tests/test_browser_docker.py"
       ],
       "review_needed": "No submit or POST on false controls.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-002-AT-002-04",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -340,7 +386,9 @@
         "tests/test_dns_quorum.py"
       ],
       "review_needed": "Production ownership and auth gated.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-01",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -358,7 +406,9 @@
         "tests/test_job_ledger.py"
       ],
       "review_needed": "Immutable snapshot and distributed lifecycle.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-02",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -375,7 +425,9 @@
         "tests/test_egress_kernel_docker.py"
       ],
       "review_needed": "Independent production bypass test open.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-03",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -391,7 +443,9 @@
         "tests/test_attested_ipc.py"
       ],
       "review_needed": "All protocol, port, IP and TLS gates.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-04",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -408,7 +462,9 @@
         "tests/test_resource_scope.py"
       ],
       "review_needed": "Live redirects and protocol exclusions open.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-05",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -422,7 +478,9 @@
         "tests/test_egress_kernel_docker.py"
       ],
       "review_needed": "Production independent review open.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-06",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -440,7 +498,9 @@
         "tests/test_browser_docker.py"
       ],
       "review_needed": "All caps across real worker/gateway.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-07",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -456,7 +516,9 @@
         "tests/test_browser_evidence.py"
       ],
       "review_needed": "Sanitized production output.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-08",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -473,7 +535,9 @@
         "tests/test_dns_quorum.py"
       ],
       "review_needed": "Inconclusive result, not merely transport denial.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-FR-003-09",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -490,7 +554,9 @@
         "tests/test_attested_ipc.py"
       ],
       "review_needed": "Real proof and tenant/replay/expiry scope.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-AT-003-01",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -507,7 +573,9 @@
         "tests/test_attested_ipc.py"
       ],
       "review_needed": "Live DNS/subresource acceptance not proven.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-AT-003-02",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -523,7 +591,9 @@
         "tests/test_isolated_gateway_docker.py"
       ],
       "review_needed": "Independent bypass on final configuration.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-AT-003-03",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -539,7 +609,9 @@
         "tests/test_isolated_gateway_docker.py"
       ],
       "review_needed": "Root-only pilot is not DNS-verified live consent acceptance.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-AT-003-04",
+      "acceptance_evidence": []
     },
     {
       "package": "003-verified-egress-gateway",
@@ -556,7 +628,9 @@
         "tests/test_verified_root_docker.py"
       ],
       "review_needed": "Reconcile exact ARM64/x86-64 evidence.",
-      "state": "candidate_unverified"
+      "state": "candidate_unverified",
+      "review_task_id": "REVIEW-003-AT-003-05",
+      "acceptance_evidence": []
     }
   ]
 }

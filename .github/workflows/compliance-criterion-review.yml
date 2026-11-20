@@ -1,0 +1,23 @@
+name: Compliance criterion review
+on:
+  pull_request:
+    paths:
+      - 'specs/**'
+      - 'docs/spec-traceability-review-2026-11-20.json'
+      - 'docs/spec-criterion-review-tasks-2026-11-20.md'
+      - '.github/workflows/compliance-criterion-review.yml'
+permissions:
+  contents: read
+jobs:
+  compliance-criterion-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python specs/review-checks/check_criterion_review.py
+      - run: python -m unittest discover -s specs/review-checks -p test_criterion_review.py
